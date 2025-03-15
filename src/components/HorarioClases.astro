@@ -1,0 +1,289 @@
+<div class="horario-clases">
+    <div class="hora-clase"></div>
+    <div class="dia-semana">Lunes</div>
+    <div class="dia-semana">Martes</div>
+    <div class="dia-semana">Miércoles</div>
+    <div class="dia-semana">Jueves</div>
+    <div class="dia-semana">Viernes</div>
+
+    <!-- Primera hora -->
+    <div class="hora-clase">15:30-16:25</div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Aula 203</div>
+    </div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Laboratorio 1</div>
+    </div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia"></div>
+
+    <!-- Segunda hora -->
+    <div class="hora-clase">16:25-17:20</div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Aula 105</div>
+    </div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Aula 301</div>
+    </div>
+
+    <!-- Tercera hora -->
+    <div class="hora-clase">17:20-18:15</div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Aula 110</div>
+    </div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Taller 3</div>
+    </div>
+    <div class="celda-guardia"></div>
+
+    <!-- Recreo -->
+    <div class="hora-clase">18:15-18:35</div>
+    <div class="recreo">RECREO</div>
+
+    <!-- Cuarta hora -->
+    <div class="hora-clase">18:35-19:30</div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Aula 215</div>
+    </div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Laboratorio 2</div>
+    </div>
+
+    <!-- Quinta hora -->
+    <div class="hora-clase">19:30-20:25</div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Aula 305</div>
+    </div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Sala Profesores</div>
+    </div>
+    <div class="celda-guardia"></div>
+
+    <!-- Sexta hora -->
+    <div class="hora-clase">20:25-21:20</div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Aula 201</div>
+    </div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia"></div>
+    <div class="celda-guardia disponible">
+        <div class="etiqueta-guardia">Guardia disponible</div>
+        <div class="info-guardia">Biblioteca</div>
+    </div>
+    <div class="celda-guardia"></div>
+</div>
+
+<style>
+    .horario-clases {
+        display: grid;
+        grid-template-columns: 140px repeat(5, 1fr);
+        gap: 1px;
+        margin: 2rem 0;
+        min-width: 300px;
+        overflow-x: auto;
+        background: var(--borde);
+        border-radius: 8px;
+        box-shadow: var(--sombra);
+    }
+
+    .hora-clase {
+        background: var(--color-institucional);
+        color: white;
+        padding: 1rem;
+        text-align: center;
+        font-size: 0.9rem;
+        position: sticky;
+        left: 0;
+        z-index: 1000;
+        min-width: 140px;
+        font-weight: 500;
+    }
+
+    .dia-semana {
+        background: var(--color-destacado);
+        color: white;
+        padding: 1rem;
+        text-align: center;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        position: sticky;
+        top: 0;
+        z-index: 500;
+    }
+
+    .celda-guardia {
+        background: white;
+        min-height: 80px;
+        padding: 1rem;
+        position: relative;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .celda-guardia.disponible {
+        background: #f0f4f8;
+        cursor: pointer;
+        border-left: 4px solid var(--color-secundario);
+    }
+
+    .celda-guardia.disponible:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--sombra);
+        z-index: 1;
+    }
+
+    .celda-guardia.asignada {
+        background: #e8f5e9;
+        border-left: 4px solid #2ecc71;
+    }
+
+    .etiqueta-guardia {
+        font-size: 0.75rem;
+        color: var(--color-secundario);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-guardia {
+        font-size: 0.9rem;
+        color: var(--color-institucional);
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+
+    .recreo {
+        background: #fff3e0 !important;
+        color: #ef6c00;
+        font-style: italic;
+        grid-column: 2 / span 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .seccion-guardias {
+        margin: 2rem 0;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: var(--sombra);
+    }
+
+    .titulo-seccion {
+        font-size: 1.3rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--color-institucional);
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--borde);
+    }
+
+    .titulo-seccion::before {
+        content: "";
+        display: block;
+        width: 8px;
+        height: 24px;
+        background: var(--color-secundario);
+        border-radius: 4px;
+    }
+
+    .lista-guardias {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .tarjeta-guardia {
+        padding: 1.25rem;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .tarjeta-guardia:hover {
+        transform: translateX(4px);
+        border-color: var(--color-secundario);
+    }
+
+    .boton-asignar {
+        background: var(--color-secundario);
+        color: white;
+        border: none;
+        padding: 0.5rem 1.25rem;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .boton-asignar:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .boton-asignar.asignada {
+        background: #95a5a6;
+        cursor: default;
+    }
+
+    .filtro-container {
+        margin: 2rem 0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .boton-filtro {
+        background: var(--color-destacado);
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 25px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .boton-filtro:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+</style>

@@ -1,0 +1,33 @@
+---
+import Layout from "../layouts/Layout.astro";
+import HorarioClases from "../components/HorarioClases.astro";
+---
+
+<Layout page_title="Home">
+    <a
+      href="/api/auth/logout"
+      >Sign out</a>
+    <div class="contenedor-instituto">
+        <header class="cabecera-instituto">
+            <h1 class="titulo-principal">Gestión de Guardias</h1>
+            <div class="info-usuario">
+                <div>Hola, Pedro</div>
+                <div class="fecha" id="fecha"></div>
+            </div>
+        </header>
+
+        <HorarioClases />
+    </div>
+</Layout>
+
+<style>
+    .contenedor-instituto {
+        max-width: 700px;
+        margin: 30px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--sombra);
+        overflow-x: hidden;
+    }
+</style>

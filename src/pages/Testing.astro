@@ -1,0 +1,104 @@
+---
+import GuardiaCard from "../components/GuardiaCard.astro";
+---
+
+<div class="contenedor-guardias" id="guardias-container">
+    <p>Cargando guardias...</p>
+
+    
+
+
+</div>
+
+<form id="guardia-form">
+    <label for="tipo">Tipo:</label><br />
+    <input type="text" id="tipo" name="tipo" /><br />
+    <label for="inicio">Inicio:</label><br />
+    <input type="datetime-local" id="inicio" name="inicio" /><br />
+    <label for="fin">Fin:</label><br />
+    <input type="datetime-local" id="fin" name="fin" /><br />
+    <label for="observaciones">Observaciones:</label><br />
+    <input type="text" id="observaciones" name="observaciones" /><br />
+    <label for="ausencias">Ausencias:</label><br />
+    <input type="text" id="ausencias" name="ausencias" /><br />
+    <label for="aula">Aula:</label><br />
+    <input type="text" id="aula" /><br />
+    <input type="submit" value="Submit" />
+</form>
+
+<script type="module">
+
+    async function reloadUI()
+    {
+        const response = await fetch("/api/get-guardias");
+        const guardias = await response.json();
+
+        const container = document.getElementById("guardias-container");
+        container.innerHTML = "";
+
+        guardias.forEach((guardia) => {
+            const card = document.createElement("div");
+            card.className = "guardia-card";
+            card.innerHTML = `
+                <p><strong>Tipo:</strong> ${guardia.tipo}</p>
+                <p><strong>Inicio:</strong> ${guardia.inicio}</p>
+                <p><strong>Fin:</strong> ${guardia.fin}</p>
+                <p><strong>Observaciones:</strong> ${guardia.observaciones}</p>
+                <p><strong>Ausencias:</strong> ${guardia.ausencias}</p>
+                <p><strong>Aula:</strong> ${guardia.id_aula}</p>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    reloadUI();
+
+    document
+    .getElementById("guardia-form")
+    .addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const form = event.target;
+        const data = {
+            tipo: form.tipo.value,
+            inicio: form.inicio.value,
+            fin: form.fin.value,
+            observaciones: form.observaciones.value,
+            ausencias: form.ausencias.value,
+            id_aula: form.aula.value,
+        };
+
+        console.log("Enviando datos:", data); // 🔍 Verificar en consola
+
+        try {
+            const response = await fetch("/api/add-guardia", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+            const result = await response.json();
+            console.log("Respuesta del servidor:", result);
+
+            reloadUI();
+        } catch (error) {
+            console.error("Error en la petición:", error);
+        }
+    });
+
+</script>
+
+<style>
+    .contenedor-guardias {
+        background-color: gray;
+        padding: 10px;
+    }
+    .guardia-card {
+        background: white;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+    }
+</style>
