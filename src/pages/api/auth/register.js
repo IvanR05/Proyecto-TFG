@@ -11,13 +11,21 @@ export const POST = async ({ request, redirect }) => {
         return new Response("Correo electrónico y contraseña obligatorios", { status: 400 });
     }
 
-    const { error } = await supabase.auth.signUp({
-        email,
-        password,
-    });
+    // 🔎 Check if the user already exists in auth.users
+    const { data: existingUser, error: userCheckError } = await supabase
+        .from("usuarios")
+        .select("correo")
+        .eq("correo", email)
 
-    if (error) {
-        return new Response(error.message, { status: 500 });
+    if (existingUser) {
+        return new Response("Este correo ya está registrado.", { status: 400 });
+    }
+
+    // 📝 If no existing user, proceed with the sign-up
+    const { error: signUpError } = await supabase.auth.signUp({ email, password });
+
+    if (signUpError) {
+        return new Response(signUpError.message, { status: 500 });
     }
 
     return redirect("/Login");
