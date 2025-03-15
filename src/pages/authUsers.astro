@@ -1,0 +1,197 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { supabase } from "../lib/supabase.js";
+
+const { data: usuarios, error } = await supabase
+    .from("usuarios")
+    .select("id, nombre, correo")
+    .eq("aceptado", false)
+    .order("created_at", { ascending: true });
+---
+
+<Layout title="Gestión de Usuarios">
+    <main class="container">
+        <h1>Usuarios Pendientes de Aprobación</h1>
+        
+        {error ? (
+            <div class="error">⚠️ Error cargando usuarios: {error.message}</div>
+        ) : (
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {usuarios.length === 0 ? (
+                            <tr class="empty">
+                                <td colspan="3">🎉 Todos los usuarios están aprobados</td>
+                            </tr>
+                        ) : (
+                            usuarios.map(usuario => (
+                                <tr data-id={usuario.id}>
+                                    <td>{usuario.nombre}</td>
+                                    <td>{usuario.correo}</td>
+                                    <td class="actions">
+                                        <button 
+                                            class="btn accept" 
+                                            data-action="accept"
+                                            aria-label="Aprobar usuario"
+                                        >
+                                            ✅ Aceptar
+                                        </button>
+                                        <button 
+                                            class="btn reject" 
+                                            data-action="reject"
+                                            aria-label="Rechazar usuario"
+                                        >
+                                            ❌ Rechazar
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        )}
+    </main>
+
+    <script is:inline>
+        (function() {
+            document.addEventListener('click', async (e) => {
+                const btn = e.target.closest('.btn');
+                if (!btn) return;
+                
+                const row = btn.closest('tr');
+                const id = row.dataset.id;
+                const action = btn.dataset.action;
+                const isAccept = action === 'accept';
+                
+                try {
+                    // Bloquear botones durante la operación
+                    btn.disabled = true;
+                    row.style.opacity = '0.5';
+                    
+                    const response = await fetch('/api/update-user', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id, aceptado: isAccept })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(await response.text());
+                    }
+
+                    // Animación de eliminación
+                    row.style.transition = 'opacity 0.3s';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(`❌ Error: ${error.message}`);
+                } finally {
+                    btn.disabled = false;
+                    row.style.opacity = '1';
+                }
+            });
+        })();
+    </script>
+
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --bg-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .table-container {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .accept { background: var(--success-color); color: white; }
+        .reject { background: var(--error-color); color: white; }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .empty td {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            table {
+                min-width: 600px;
+            }
+        }
+    </style>
+</Layout>
