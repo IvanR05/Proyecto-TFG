@@ -28,5 +28,10 @@ export const POST = async ({ request, cookies, redirect }) => {
         path: "/",
     });
 
+    supabase.auth.setSession({
+        refresh_token,
+        access_token
+    })
+
     return redirect("/Home");
 };

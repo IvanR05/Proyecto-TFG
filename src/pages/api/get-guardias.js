@@ -5,8 +5,8 @@ export const prerender = false; // 🔥 Habilita SSR para manejar POST
 export async function GET() {
     const { data, error } = await supabase
         .from('guardias')
-        .select('*'); // aquí la sentencia
-    // vale espera que cierro la puerta y puedo hablar
+        .select('*'); 
+    
     if (error) {
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
