@@ -10,9 +10,19 @@ export const POST = async ({ request, redirect }) => {
     if (!email || !password) {
         return new Response("Correo electrónico y contraseña obligatorios", { status: 400 });
     }
+    
+    // 🔎 Check if the user already exists in auth.users
+    const { existingUser, userCheckError } = await supabase
+        .from("usuarios")
+        .select("correo")
+        .eq("correo", email)
+
+    if (existingUser) {
+        return new Response("Este correo ya está registrado.", { status: 400 });
+    }
 
     // Registrar al usuario en Supabase
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { data, signUpError } = await supabase.auth.signUp({
         email,
         password,
     });
@@ -28,7 +38,7 @@ export const POST = async ({ request, redirect }) => {
     }
 
     // Insertar el usuario en la tabla 'usuarios' con el mismo auth_id
-    const { error: insertError } = await supabase
+    const { insertError } = await supabase
         .from("usuarios")
         .insert([
             {
