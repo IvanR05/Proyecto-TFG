@@ -3,15 +3,21 @@ import Layout from "../layouts/Layout.astro";
 import { supabase } from "../lib/supabase.js";
 
 const { data: usuarios, error } = await supabase
-    .from("usuarios")
-    .select("id, nombre, correo")
-    .eq("aceptado", false)
-    .order("created_at", { ascending: true });
+  .from('usuarios')
+  .select(`
+    id,
+    nombre,
+    correo,
+    created_at
+  `)
+  .eq('aceptado', false)
+  .order('created_at', { ascending: true });
 ---
 
 <Layout title="Gestión de Usuarios">
     <main class="container">
         <h1>Usuarios Pendientes de Aprobación</h1>
+        <h3>(Al rechazar los usuarios no se borrarán de la base de datos pero no tendrán acceso a la aplicación)</h3>
         
         {error ? (
             <div class="error">⚠️ Error cargando usuarios: {error.message}</div>
@@ -36,20 +42,8 @@ const { data: usuarios, error } = await supabase
                                     <td>{usuario.nombre}</td>
                                     <td>{usuario.correo}</td>
                                     <td class="actions">
-                                        <button 
-                                            class="btn accept" 
-                                            data-action="accept"
-                                            aria-label="Aprobar usuario"
-                                        >
-                                            ✅ Aceptar
-                                        </button>
-                                        <button 
-                                            class="btn reject" 
-                                            data-action="reject"
-                                            aria-label="Rechazar usuario"
-                                        >
-                                            ❌ Rechazar
-                                        </button>
+                                        <button class="btn accept" data-action="accept">✅ Aceptar</button>
+                                        <button class="btn reject" data-action="reject">❌ Rechazar</button>
                                     </td>
                                 </tr>
                             ))
@@ -72,7 +66,6 @@ const { data: usuarios, error } = await supabase
                 const isAccept = action === 'accept';
                 
                 try {
-                    // Bloquear botones durante la operación
                     btn.disabled = true;
                     row.style.opacity = '0.5';
                     
@@ -81,12 +74,11 @@ const { data: usuarios, error } = await supabase
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id, aceptado: isAccept })
                     });
-
+    
                     if (!response.ok) {
                         throw new Error(await response.text());
                     }
-
-                    // Animación de eliminación
+    
                     row.style.transition = 'opacity 0.3s';
                     row.style.opacity = '0';
                     setTimeout(() => row.remove(), 300);
@@ -104,68 +96,99 @@ const { data: usuarios, error } = await supabase
 
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --success-color: #27ae60;
-            --error-color: #e74c3c;
-            --bg-color: #f8f9fa;
+            --primary-color: #34495e;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --bg-color: #f4f6f7;
+            --text-color: #2c3e50;
+            --shadow-color: rgba(0, 0, 0, 0.2);
         }
 
         .container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 1rem;
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            text-align: center;
+            transition: transform 0.3s ease-in-out;
         }
 
         h1 {
             color: var(--primary-color);
-            text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        h3{
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            font-weight: bold;
         }
 
         .table-container {
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px var(--shadow-color);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             background: white;
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         th, td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid #eee;
+            padding: 1.2rem;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            color: black;
         }
 
         th {
             background: var(--primary-color);
             color: white;
+            text-transform: uppercase;
+            font-weight: bold;
         }
 
         .actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.8rem;
         }
 
         .btn {
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1.2rem;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px var(--shadow-color);
         }
 
-        .accept { background: var(--success-color); color: white; }
-        .reject { background: var(--error-color); color: white; }
+        .accept {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .reject {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
 
         .btn:disabled {
-            opacity: 0.7;
+            opacity: 0.6;
             cursor: not-allowed;
         }
 
@@ -173,25 +196,17 @@ const { data: usuarios, error } = await supabase
             text-align: center;
             padding: 2rem;
             color: #666;
+            font-size: 1.2rem;
         }
 
         .error {
             background: #fee2e2;
-            color: #dc2626;
-            padding: 1rem;
-            border-radius: 4px;
-            text-align: center;
+            color: #c0392b;
+            padding: 1.2rem;
+            border-radius: 6px;
             margin: 2rem 0;
-        }
-
-        @media (max-width: 768px) {
-            .table-container {
-                overflow-x: auto;
-            }
-            
-            table {
-                min-width: 600px;
-            }
+            font-size: 1.1rem;
+            font-weight: bold;
         }
     </style>
 </Layout>
