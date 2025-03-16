@@ -1,49 +1,42 @@
 import { supabase } from "../../../lib/supabase.js";
 export const prerender = false; // 🔥 Habilita SSR para manejar POST
 
-export const GET = async ({ cookies, redirect }) => {
+export const GET = async ({ cookies }) => {
     const authToken = cookies.get("sb-access-token")?.value;
-    const refreshToken = cookies.get("sb-refresh-token")?.value;
 
     if (!authToken) {
         return new Response(JSON.stringify({ user: null }), { status: 200 });
     }
 
     try {
-        
-        const { data, userError } = await supabase.auth.setSession({
-            access_token: authToken,
-            refresh_token: refreshToken,
-        })
+        // ✅ Validate token instead of refreshing the session
+        const { data, error } = await supabase.auth.getUser(authToken);
 
-        if (userError) {
-            console.error("Error fetching user data:", userError);
-            return new Response(JSON.stringify({ user: null }), { status: 500 });
+        if (error || !data || !data.user) {
+            console.error("Invalid or expired token:", error);
+            return new Response(JSON.stringify({ user: null }), { status: 401 });
         }
 
+        // Access the `id` inside `data.user`
         const auth_id = data.user.id;
-        
-        console.log("auth code " + auth_id)
 
-        const { u, error } = await supabase
-            .from('usuarios')
-            .select('auth_id')
-            .eq('auth_id', auth_id)
+        const { data: u, error: dbError } = await supabase
+            .from("usuarios")
+            .select("*")
+            .eq("auth_id", auth_id);
 
-        if (error) {
-            console.log("hello");
-            console.error("Error fetching user data:", error);
-            return { status: 500, body: "Error fetching user data" };
+        if (dbError) {
+            console.error("Error fetching user data:", dbError);
+            return new Response(JSON.stringify({ error: "Error fetching user data" }), { status: 500 });
         }
-        console.log("result " + u);
 
-        return new Response(JSON.stringify(u), {
+        return new Response(JSON.stringify(u[0] || null), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: { "Content-Type": "application/json" }
         });
 
     } catch (error) {
         console.error("Error obteniendo datos del usuario:", error);
         return new Response(JSON.stringify({ user: null }), { status: 500 });
     }
-}
+};

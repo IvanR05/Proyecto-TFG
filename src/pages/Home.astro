@@ -26,7 +26,7 @@ import HorarioClases from "../components/HorarioClases.astro";
 
     if (user.ok) {
         const data = await user.json();
-        document.getElementById("userName").textContent = data.email;
+        document.getElementById("userName").textContent = data.nombre;
     }
 </script>
 

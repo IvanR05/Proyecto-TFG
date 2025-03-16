@@ -6,9 +6,10 @@ export const POST = async ({ request, redirect }) => {
     const formData = await request.formData();
     const email = formData.get("email")?.toString();
     const password = formData.get("password")?.toString();
+    const nombre = formData.get("nombre")?.toString();
 
-    if (!email || !password) {
-        return new Response("Correo electrónico y contraseña obligatorios", { status: 400 });
+    if (!email || !password || !nombre) {
+        return new Response("Correo electrónico, nombre y contraseña son obligatorios", { status: 400 });
     }
     
     // 🔎 Check if the user already exists in auth.users
@@ -42,6 +43,7 @@ export const POST = async ({ request, redirect }) => {
         .from("usuarios")
         .insert([
             {
+                nombre: nombre,
                 correo: email,
                 auth_id: authUserId, // Usamos el mismo ID que Supabase generó
                 tipo: "usuario", // Puedes cambiarlo según lo necesites
