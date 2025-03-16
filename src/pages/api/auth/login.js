@@ -39,7 +39,7 @@ export const POST = async ({ request, cookies, redirect }) => {
     }
 
     if (!userData.aceptado) {
-        return new Response("Esperando confirmación del administrador", { status: 403 });
+        return new Response("Esperando confirmación del administrador para ser aceptado", { status: 403 });
     }
 
     // Guardar tokens en cookies

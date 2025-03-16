@@ -7,23 +7,25 @@ export const POST = async ({ request, redirect }) => {
     const email = formData.get("email")?.toString();
     const password = formData.get("password")?.toString();
     const nombre = formData.get("nombre")?.toString();
+    const tipo = formData.get("tipo")?.toString(); // Especificado por el admin
 
-    if (!email || !password || !nombre) {
-        return new Response("Correo electrónico, nombre y contraseña son obligatorios", { status: 400 });
+    if (!email || !password || !nombre || !tipo) {
+        return new Response("Todos los campos son obligatorios", { status: 400 });
     }
     
-    // 🔎 Check if the user already exists in auth.users
-    const { existingUser, userCheckError } = await supabase
+    // Verificar si el usuario ya existe en la tabla 'usuarios'
+    const { data: existingUser, error: userCheckError } = await supabase
         .from("usuarios")
         .select("correo")
         .eq("correo", email)
+        .single();
 
     if (existingUser) {
         return new Response("Este correo ya está registrado.", { status: 400 });
     }
 
-    // Registrar al usuario en Supabase
-    const { data, signUpError } = await supabase.auth.signUp({
+    // Registrar al usuario en Supabase Auth
+    const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
     });
@@ -38,22 +40,23 @@ export const POST = async ({ request, redirect }) => {
         return new Response("Error al obtener el ID del usuario", { status: 500 });
     }
 
-    // Insertar el usuario en la tabla 'usuarios' con el mismo auth_id
-    const { insertError } = await supabase
+    // Insertar el usuario en la tabla 'usuarios' con el tipo especificado y aceptado en true
+    const { error: insertError } = await supabase
         .from("usuarios")
-        .insert([
-            {
-                nombre: nombre,
-                correo: email,
-                auth_id: authUserId, // Usamos el mismo ID que Supabase generó
-                tipo: "profesor", // Puedes cambiarlo según lo necesites
-                aceptado: false, // Puede ajustarse si lo requieres
-            },
-        ]);
+        .insert([{
+            nombre,
+            correo: email,
+            auth_id: authUserId,
+            tipo, // Especificado por el admin
+            aceptado: true, // Aceptado automáticamente
+        }]);
 
     if (insertError) {
         return new Response(insertError.message, { status: 500 });
     }
 
-    return redirect("/Login");
+    return new Response(
+        JSON.stringify({ message: "Usuario creado exitosamente", success: true }),
+        { status: 200 }
+    );
 };
