@@ -1,0 +1,82 @@
+---
+import NavBar from "../components/NavBar.astro";
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout>
+  <h1>Informacion personal</h1>
+  <button class="full-width-button">Cambiar correo</button>
+  <button class="full-width-button">Cambiar contraseña</button>
+  <button class="full-width-button">Cerrar sesion</button>
+
+  <h1>Administrador</h1>
+  <button class="full-width-button">Gestionar usuarios</button>
+  <button class="full-width-button" onclick="window.location.href='/GestionAulas'">Gestionar aulas</button>
+
+  <NavBar></NavBar>
+</Layout>
+
+<style>
+    :root {
+      --color-primario: #2C3E50;
+      --color-secundario: #3498DB;
+      --color-texto: #2C3E50;
+      --color-fondo: #b0f7fc;
+      --sombra: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .full-width-button {
+      width: 100%; /* Hace que el botón ocupe el 100% del espacio horizontal */
+      padding: 25px 20px; /* Hace el botón más alto (más relleno vertical) y más espacioso por los lados */
+      margin: 4px 0; /* Añade margen en la parte superior e inferior */
+      background-color: #fff; /* Fondo blanco */
+      color: var(--color-texto); /* El color del texto (definido en tu esquema) */
+      border: none; /* Sin borde */
+      border-radius: 8px; /* Bordes redondeados */
+      font-size: 16px; /* Tamaño del texto */
+      text-align: left; /* Alinea el texto a la izquierda */
+      display: flex; /* Utiliza flexbox para alinear el contenido */
+      justify-content: space-between; /* Alinea el contenido de manera que el texto esté a la izquierda y la flecha a la derecha */
+      align-items: center; /* Centra verticalmente el texto */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      cursor: pointer; /* Muestra un cursor pointer cuando se pasa sobre el botón */
+      transition: background-color 0.3s; /* Efecto suave al pasar el cursor */
+    }
+
+    /* Flecha triangular apuntando a la derecha */
+    .full-width-button::after {
+      content: ''; /* El contenido del pseudo-elemento es vacío */
+      width: 0; /* Sin ancho */
+      height: 0; /* Sin altura */
+      border-top: 6px solid transparent; /* Crea la parte superior de la flecha */
+      border-bottom: 6px solid transparent; /* Crea la parte inferior de la flecha */
+      border-left: 10px solid var(--color-primario); /* Crea el borde visible que forma la flecha */
+      margin-left: 10px; /* Espacio entre el texto y la flecha */
+    }
+
+    .full-width-button:hover {
+      background-color: rgb(240, 240, 240); /* Cambia el fondo a color primario cuando pasa el ratón */
+    }
+    
+    body {
+      margin: 0px;
+      background-color: rgb(226, 251, 255);
+      color: var(--color-texto);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      font-family: 'Merriweather', serif;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 380px;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    
+    h1 {
+      color: var(--color-secundario);
+    }
+</style>
