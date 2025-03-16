@@ -2,7 +2,6 @@
 import Layout from "../layouts/Layout.astro";
 import HorarioClases from "../components/HorarioClases.astro";
 
-
 ---
 
 <Layout page_title="Home">
@@ -22,11 +21,11 @@ import HorarioClases from "../components/HorarioClases.astro";
 </Layout>
 
 <script type="module">
-    const user = await fetch("/api/auth/get-user");
+    const userData = await fetch("/api/auth/get-user");
 
-    if (user.ok) {
-        const data = await user.json();
-        document.getElementById("userName").textContent = data.nombre;
+    if (userData.ok) {
+        const user = await userData.json();
+        document.getElementById("userName").textContent = user.nombre;
     }
 </script>
 
