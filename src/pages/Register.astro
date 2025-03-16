@@ -9,6 +9,10 @@ import Layout from "../layouts/Layout.astro";
             <p>¿Ya tienes una cuenta? <a href="/Login">Iniciar sesión</a></p>
             <form action="/api/auth/register" method="post" class="register-form">
                 <div class="input-group">
+                    <label for="nombre">Nombre</label>
+                    <input type="text" name="nombre" id="nombre" required placeholder="Nombre" />
+                </div>
+                <div class="input-group">
                     <label for="email">Correo electrónico</label>
                     <input type="email" name="email" id="email" required placeholder="nombre@correo.com" />
                 </div>
@@ -26,7 +30,7 @@ import Layout from "../layouts/Layout.astro";
             --color-primario: #2C3E50;
             --color-secundario: #3498DB;
             --color-texto: #2C3E50;
-            --color-fondo: #F9F9F9;
+            --color-fondo: #b0f7fc;
             --sombra: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
@@ -34,26 +38,31 @@ import Layout from "../layouts/Layout.astro";
             color: var(--color-secundario); /* Color secundario */
         }
 
-        body {
-            font-family: 'Open Sans', sans-serif;
-        }
+        
 
         .register-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            min-height: 100%;
             padding: 2rem;
+            box-sizing: border-box;
             background: var(--color-fondo);
         }
 
         .register-card {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+
             background: white;
             border-radius: 1rem;
             padding: 2.5rem;
             box-shadow: var(--sombra);
             max-width: 400px;
             width: 100%;
+            height: 70vh;
             text-align: center;
         }
 
@@ -99,6 +108,7 @@ import Layout from "../layouts/Layout.astro";
             font-weight: bold;
             cursor: pointer;
             transition: 0.3s;
+            margin-top: 20px;
         }
 
         .register-btn:hover {
