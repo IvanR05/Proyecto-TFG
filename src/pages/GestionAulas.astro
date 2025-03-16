@@ -1,0 +1,87 @@
+---
+import Layout from "../layouts/Layout.astro";
+import NavBar from "../components/NavBar.astro";
+import AulaCard from "../components/AulaCard.astro";
+---
+
+<Layout>
+    <div class="aulas-list">
+        <!-- Los componentes de aula se añadirán aquí dinámicamente -->
+         <AulaCard id="A-01" grupo="2ºA"/>
+         <AulaCard id="B-07" grupo="1ºA"/>
+         <AulaCard id="A-05-D" grupo="2ºD"/>
+         <AulaCard id="B-08" grupo="1ºSMR B y 1ºASIR"/>
+         <AulaCard id="Biblioteca" grupo="Espacio común"/>
+    </div>
+
+    <button class="add-aula-button">
+        +
+    </button>
+
+    <NavBar/>
+</Layout>
+
+<style>
+    :root {
+      --color-primario: #2C3E50;
+      --color-secundario: #3498DB;
+      --color-texto: #2C3E50;
+      --color-fondo: #b0f7fc;
+      --sombra: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Contenedor de aulas desplazable */
+    .aulas-list {
+        padding: 16px;
+        height: calc(100vh - 120px); /* Calcula el alto dejando espacio para el botón y la barra */
+        overflow-y: auto; /* Habilita el scroll vertical */
+        margin-bottom: 80px; /* Deja espacio para el botón flotante */
+        
+        /* Aseguramos que los elementos estén en una columna con flexbox */
+        display: flex;
+        flex-direction: column; /* Alinea los elementos de forma vertical */
+        gap: 10px; /* Espacio de 12px entre los elementos (aulas) */
+    }
+  
+    .add-aula-button {
+        position: fixed;
+        bottom: 100px; /* Se asegura que el botón esté encima de la barra de navegación, dejando espacio de 80px */
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 60px;
+        background-color: var(--color-secundario); /* Azul según tu esquema */
+        color: white;
+        border: none;
+        border-radius: 50%; /* Lo hace completamente redondo */
+        font-size: 32px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        z-index: 10; /* Asegura que el botón quede por encima de otros elementos */
+    }
+  
+    .add-aula-button:hover {
+      background-color: #2980b9; /* Cambia el color cuando pasa el ratón */
+    }
+
+    body {
+    margin: 0px;
+    background-color: rgb(226, 251, 255);
+    color: var(--color-texto);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    font-family: 'Merriweather', serif;
+  }
+  
+  .container {
+    width: 100%;
+    max-width: 380px;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+</style>
