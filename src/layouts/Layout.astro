@@ -16,11 +16,10 @@ const { page_title } = Astro.props;
 
 		<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
 	</head>
-	<body>
+	<body>		
 		<div class="container">
 			<slot />
 		</div>
-		
 	</body>
 </html>
 
@@ -28,20 +27,27 @@ const { page_title } = Astro.props;
 
 	body {
 		margin: 0px;
-		background-color: #111;
-		color: white;
+		background-color: white;
+		color: black;
+		height: 100vh;
+
+		overflow-x: hidden;
+		
+
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		height: 100vh;
 
 		font-family: 'Merriweather', serif;
 	}
+
 
 	.container {
 		box-sizing: border-box;
 		height: 100%;
 		width: 100%;
-		max-width: 380px;
+		max-width: 320px;
+		
+		padding: 15px;
 	}
 </style>

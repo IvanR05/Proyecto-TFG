@@ -1,23 +1,22 @@
 ---
+
+
 import Layout from "../layouts/Layout.astro";
 import HorarioClases from "../components/HorarioClases.astro";
-
+import NavBar from "../components/NavBar.astro";
+import FreeGuardiasDisplayer from "../components/FreeGuardiasDisplayer.astro";
+import GuardiaCard from "../components/GuardiaCard.astro";
 ---
 
 <Layout page_title="Home">
     <h1>Bienvenido <span id="userName"></span></h1>
-    <a href="/api/auth/logout">Sign out</a>
-    <div class="contenedor-instituto">
-        <header class="cabecera-instituto">
-            <h1 class="titulo-principal">Gestión de Guardias</h1>
-            <div class="info-usuario">
-                <div>Hola, Pedro</div>
-                <div class="fecha" id="fecha"></div>
-            </div>
-        </header>
+    <p>Este es el horario de clases de la semana:</p>
+    <HorarioClases />
 
-        <HorarioClases />
-    </div>
+    <h2>Guardias de la semana</h2>
+    <FreeGuardiasDisplayer />
+
+    <a href="/api/auth/logout">Sign out</a>
 </Layout>
 
 <script type="module">
@@ -29,15 +28,6 @@ import HorarioClases from "../components/HorarioClases.astro";
     }
 </script>
 
-
 <style>
-    .contenedor-instituto {
-        max-width: 700px;
-        margin: 30px auto;
-        padding: 30px;
-        
-        border-radius: 12px;
-        box-shadow: var(--sombra);
-        overflow-x: hidden;
-    }
+    
 </style>

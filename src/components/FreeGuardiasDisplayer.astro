@@ -1,0 +1,59 @@
+---
+import { Guardia } from '../utils/Guardia.js';
+import { supabase } from "../lib/supabase.js";
+import GuardiaCard from './GuardiaCard.astro';
+
+// Fetch guardias data from Supabase
+const { data: guardiasData, error: guardiasError } = await supabase
+  .from('guardias')
+  .select('*');
+
+// Fetch asignaciones_guardia data from Supabase (this will give us linked guards)
+const { data: asignacionesData, error: asignacionesError } = await supabase
+  .from('asignaciones_guardia')
+  .select('id_guardia');
+
+// Check for errors
+if (guardiasError || asignacionesError) {
+  console.error("Error fetching data: ", guardiasError || asignacionesError);
+}
+
+// Create an array of Guardia instances
+const guardias = guardiasData?.map((guardia) => 
+  new Guardia({
+    id: guardia.id || 0,
+    tipo: guardia.tipo || '',
+    inicio: guardia.inicio || null,
+    fin: guardia.fin || null,
+    observaciones: guardia.observaciones || '',
+    ausencias: guardia.ausencias || '',
+    id_aula: guardia.id_aula || ''
+  })
+);
+
+// Get an array of ids from asignaciones_guardia (this will hold linked guardias)
+const asignacionesIds = asignacionesData?.map((asignacion) => asignacion.id_guardia);
+
+// Filter the guardias array to only include those not in asignaciones_guardia
+const filteredGuardias = guardias?.filter((guardia) => !asignacionesIds?.includes(guardia.id));
+
+---
+
+<!-- Add viewport meta in your layout if not already present -->
+<!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+
+<div class="">
+  <h2>Guardias disponibles</h2>
+  <div class="guardias-container">
+    {
+      filteredGuardias?.map((guardia) => (
+        <GuardiaCard guardia={guardia} />
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  
+</style>
+

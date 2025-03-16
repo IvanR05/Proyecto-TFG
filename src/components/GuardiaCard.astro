@@ -1,20 +1,18 @@
 ---
 // Props para recibir los datos de la guardia
-const { tipo, inicio, fin, observaciones, ausencias, id_aula } = Astro.props;
+const { guardia } = Astro.props;
 
-
-let iniciodate = new Date(inicio);
-let findate = new Date(fin);
+let iniciodate = new Date(guardia.inicio);
+let findate = new Date(guardia.fin);
 ---
 
 <div class="guardia-card">
-  
-  <p><strong>Tipo:</strong> {tipo}</p>
+  <p><strong>Tipo:</strong> {guardia.tipo}</p>
   <p><strong>Inicio:</strong> {iniciodate.toString()}</p>
   <p><strong>Fin:</strong> {findate.toString()}</p>
-  <p><strong>Observaciones:</strong> {observaciones}</p>
-  <p><strong>Ausencias:</strong> {ausencias}</p>
-  <p><strong>Aula:</strong> {id_aula}</p>
+  <p><strong>Observaciones:</strong> {guardia.observaciones}</p>
+  <p><strong>Ausencias:</strong> {guardia.ausencias}</p>
+  <p><strong>Aula:</strong> {guardia.id_aula}</p>
 </div>
 
 <style>
@@ -32,12 +30,12 @@ let findate = new Date(fin);
     max-width: 300px;
     margin-bottom: 1rem;
   }
-  
+
   .profesor {
     color: #333;
     margin-bottom: 0.5rem;
   }
-  
+
   p {
     margin: 0.25rem 0;
     font-size: 0.9rem;
