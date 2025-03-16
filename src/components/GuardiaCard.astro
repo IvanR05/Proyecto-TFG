@@ -1,26 +1,55 @@
 ---
-// Props para recibir los datos de la guardia
 const { guardia } = Astro.props;
+const guardiaData = JSON.stringify(guardia);
 
-let iniciodate = new Date(guardia.inicio);
-let findate = new Date(guardia.fin);
+function getDate(date) {
+  const options = { weekday: "long", day: "numeric", month: "long" };
+  const formattedDate = date.toLocaleDateString("es-ES", options);
+  return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+}
+
+function formatTime(date) {
+  return date.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 ---
 
-<div class="guardia-card">
-  <p><strong>Tipo:</strong> {guardia.tipo}</p>
-  <p><strong>Inicio:</strong> {iniciodate.toString()}</p>
-  <p><strong>Fin:</strong> {findate.toString()}</p>
-  <p><strong>Observaciones:</strong> {guardia.observaciones}</p>
-  <p><strong>Ausencias:</strong> {guardia.ausencias}</p>
-  <p><strong>Aula:</strong> {guardia.id_aula}</p>
+<!-- Attach the serialized guardia data as a data attribute -->
+<div class="guardia-container" data-guardia={guardiaData}>
+  <div class="guardia-card">
+    <p><strong>Día:</strong> {getDate(new Date(guardia.inicio))}</p>
+    <p>
+      <strong>Tramo horario:</strong>
+      {formatTime(new Date(guardia.inicio))} - {formatTime(new Date(guardia.fin))}
+    </p>
+    <p><strong>Tipo:</strong> {guardia.tipo}</p>
+    <p><strong>Aula:</strong> {guardia.id_aula}</p>
+  </div>
+
+  <div class="modal">
+    <div class="modal-content">
+      <h3>Confirmar Guardia</h3>
+      <p>¿Confirmas que realizarás esta guardia?</p>
+      <p><strong>Día:</strong> {getDate(new Date(guardia.inicio))}</p>
+      <p>
+        <strong>Horario:</strong>
+        {formatTime(new Date(guardia.inicio))} - {formatTime(new Date(guardia.fin))}
+      </p>
+      <p>
+        <strong>Observaciones:</strong>
+        {guardia.observaciones === "" ? "N/A" : guardia.observaciones}
+      </p>
+      <div class="modal-buttons">
+        <button class="confirm-button">Confirmar</button>
+        <button class="close-modal">Cancelar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
-  h3 {
-    font-size: large;
-    color: red;
-  }
-
   .guardia-card {
     border: 2px solid #4a90e2;
     padding: 1rem;
@@ -29,15 +58,115 @@ let findate = new Date(guardia.fin);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     max-width: 300px;
     margin-bottom: 1rem;
+    cursor: pointer;
+    transition: transform 0.2s;
   }
-
-  .profesor {
+  .guardia-card:hover {
+    transform: translateY(-2px);
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .modal.show {
+    display: flex;
+  }
+  .modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  .modal-buttons {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+  }
+  .confirm-button,
+  .close-modal {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .confirm-button {
+    background-color: #4a90e2;
+    color: white;
+  }
+  .confirm-button:hover {
+    background-color: #357abd;
+  }
+  .close-modal {
+    background-color: #e0e0e0;
     color: #333;
-    margin-bottom: 0.5rem;
   }
-
-  p {
-    margin: 0.25rem 0;
-    font-size: 0.9rem;
+  .close-modal:hover {
+    background-color: #c0c0c0;
   }
 </style>
+
+<script is:inline type="module">
+  const containers = document.querySelectorAll('.guardia-container');
+  
+  containers.forEach((container) => {
+    // Check if this container has already been initialized
+    if (container.dataset.initialized) return;
+    container.dataset.initialized = "true"; // Mark as initialized
+
+    const guardiaObj = JSON.parse(container.dataset.guardia);
+    const card = container.querySelector(".guardia-card");
+    const modal = container.querySelector(".modal");
+    const confirmButton = container.querySelector(".confirm-button");
+    const closeButton = container.querySelector(".close-modal");
+
+    card.addEventListener("click", () => modal.classList.add("show"));
+    closeButton.addEventListener("click", () => modal.classList.remove("show"));
+    confirmButton.addEventListener("click", () => {
+      addAsignacionGuardia(guardiaObj);
+      modal.classList.remove("show");
+  
+    });
+  });
+
+  // Keep the addAsignacionGuardia function unchanged
+  async function addAsignacionGuardia(guardia) {
+    // Optionally, fetch the user data.
+    const userData = await fetch("/api/auth/get-user");
+    const user = await userData.json();
+
+    const data = {
+      id_guardia: guardia.id,
+      id_usuario: user.id,
+    };
+
+    console.log("Enviando asignación de guardia:", data);
+
+    try {
+      const response = await fetch("/api/add-asignaciones-guardia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
+      const result = await response.json();
+      console.log("Respuesta del servidor:", result);
+      
+    } catch (error) {
+      console.error("Error en la petición:", error);
+    }
+  }
+</script>
+
+

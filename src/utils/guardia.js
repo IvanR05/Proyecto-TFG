@@ -8,5 +8,6 @@ export class Guardia {
         this.ausencias = ausencias;
         this.id_aula = id_aula;
     }
+    
 
 }
