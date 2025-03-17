@@ -1,6 +1,14 @@
+import { supabase } from "./lib/supabase";
+
 export function onRequest({ request, redirect, url, cookies }, next) {
     const pathname = url.pathname;
     const isAuthRoute = pathname === "/Login" || pathname === "/Register";
+
+    const access_token = cookies.get("sb-access-token")?.value;
+    const refresh_token = cookies.get("sb-refresh-token")?.value;
+
+    
+    
 
     // Allow auth pages, static assets, and auth API routes
     if (
@@ -13,13 +21,18 @@ export function onRequest({ request, redirect, url, cookies }, next) {
         return next();
     }
 
-    const authToken = cookies.get("sb-access-token")?.value;
-
     // Redirect unauthenticated users to login
-    if (!authToken) {
+    if (!access_token) {
         return redirect(`/Login?redirect=${encodeURIComponent(pathname)}`);
     }
 
+    if(!supabase.auth.getSession()){
+        supabase.auth.setSession({
+            refresh_token,
+            access_token
+        })
+    }
+    
     
     if (pathname.startsWith("/api/")) {
         const referer = request.headers.get("referer"); // 🌍 De dónde viene la petición
