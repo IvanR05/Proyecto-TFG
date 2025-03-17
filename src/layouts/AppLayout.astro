@@ -1,0 +1,65 @@
+---
+const { page_title } = Astro.props;
+import NavBar from "../components/NavBar.astro";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+		<meta name="generator" content={Astro.generator} />
+
+		<title>{page_title}</title>
+
+		<link
+			href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<div class="allcontent">
+			<div class="container">
+				<slot />
+			</div>
+			<NavBar />
+		</div>
+	</body>
+</html>
+
+<style>
+	body {
+		margin: 0px;
+		background-color: white;
+		color: black;
+		height: 100vh;
+
+		
+
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		font-family: "Merriweather", serif;
+	}
+
+	.container {
+		flex: 1; /* Takes remaining space */
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 320px;
+		padding: 15px;
+	}
+
+	.allcontent {
+		display: flex;
+		flex-direction: column;
+
+		height: 100%;
+		width: 100%;
+		max-width: 320px;
+	}
+</style>

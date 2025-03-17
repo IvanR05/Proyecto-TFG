@@ -2,13 +2,14 @@
 
 
 import Layout from "../layouts/Layout.astro";
+import AppLayout from "../layouts/AppLayout.astro";
 import HorarioClases from "../components/HorarioClases.astro";
 import NavBar from "../components/NavBar.astro";
 import FreeGuardiasDisplayer from "../components/FreeGuardiasDisplayer.astro";
 import GuardiaCard from "../components/GuardiaCard.astro";
 ---
 
-<Layout page_title="Home">
+<AppLayout page_title="Home">
     <h1>Bienvenido <span id="userName"></span></h1>
     <p>Este es el horario de clases de la semana:</p>
     <HorarioClases />
@@ -17,7 +18,7 @@ import GuardiaCard from "../components/GuardiaCard.astro";
     <FreeGuardiasDisplayer />
 
     <a href="/api/auth/logout">Sign out</a>
-</Layout>
+</AppLayout>
 
 <script type="module">
     const userData = await fetch("/api/auth/get-user");
