@@ -1,9 +1,9 @@
 ---
 import NavBar from "../components/NavBar.astro";
-import Layout from "../layouts/Layout.astro";
+import AppLayout from "../layouts/AppLayout.astro";
 ---
 
-<Layout>
+<AppLayout>
   <h1>Informacion personal</h1>
   <button class="full-width-button" id="cambiar-email">Cambiar correo</button>
   <button class="full-width-button" id="cambiar-contrasena">Cambiar contraseña</button>
@@ -12,9 +12,7 @@ import Layout from "../layouts/Layout.astro";
   <h1>Administrador</h1>
   <button class="full-width-button" onclick="window.location.href='/ViewUsers'">Gestionar usuarios</button>
   <button class="full-width-button" onclick="window.location.href='/GestionAulas'">Gestionar aulas</button>
-
-  <NavBar></NavBar>
-</Layout>
+</AppLayout>
 
 <script>
   document.getElementById("cambiar-email").onclick = async function cambiarEmail()

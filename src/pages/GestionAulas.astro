@@ -1,10 +1,10 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import AppLayout from "../layouts/AppLayout.astro";
 import NavBar from "../components/NavBar.astro";
 import AulaCard from "../components/AulaCard.astro";
 ---
 
-<Layout>
+<AppLayout>
     <div class="aulas-list">
         <!-- Los componentes de aula se añadirán aquí dinámicamente -->
          <AulaCard id="A-01" grupo="2ºA"/>
@@ -19,8 +19,7 @@ import AulaCard from "../components/AulaCard.astro";
         +
     </a>
 
-    <NavBar/>
-</Layout>
+</AppLayout>
 
 <style>
     :root {
