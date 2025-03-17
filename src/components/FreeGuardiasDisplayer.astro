@@ -37,17 +37,18 @@ const asignacionesIds = asignacionesData?.map((asignacion) => asignacion.id_guar
 // Filter the guardias array to only include those not in asignaciones_guardia
 const filteredGuardias = guardias?.filter((guardia) => !asignacionesIds?.includes(guardia.id));
 
+// Aun falta filtrar por horario
 ---
 
 <!-- Add viewport meta in your layout if not already present -->
 <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
 
 <div class="">
-  <h2>Guardias disponibles</h2>
+  
   <div class="guardias-container">
     {
       filteredGuardias?.map((guardia) => (
-        <GuardiaCard guardia={guardia} />
+        <GuardiaCard guardia={guardia} owned={false} />
       ))
     }
   </div>

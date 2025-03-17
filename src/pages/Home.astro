@@ -7,6 +7,8 @@ import HorarioClases from "../components/HorarioClases.astro";
 import NavBar from "../components/NavBar.astro";
 import FreeGuardiasDisplayer from "../components/FreeGuardiasDisplayer.astro";
 import GuardiaCard from "../components/GuardiaCard.astro";
+import GuardiasToggle from "../components/GuardiasToggle.astro";
+import OwnedGuardiasDisplayer from "../components/OwnedGuardiasDisplayer.astro";
 ---
 
 <AppLayout page_title="Home">
@@ -14,8 +16,16 @@ import GuardiaCard from "../components/GuardiaCard.astro";
     <p>Este es el horario de clases de la semana:</p>
     <HorarioClases />
 
-    <h2>Guardias de la semana</h2>
-    <FreeGuardiasDisplayer />
+    <GuardiasToggle>
+        <div slot="mis-guardias">
+          <OwnedGuardiasDisplayer/>
+        </div>
+    
+        <div slot="guardias-disponibles">
+          <FreeGuardiasDisplayer />
+        </div>
+      </GuardiasToggle>
+    
 
     <a href="/api/auth/logout">Sign out</a>
 </AppLayout>
@@ -30,5 +40,7 @@ import GuardiaCard from "../components/GuardiaCard.astro";
 </script>
 
 <style>
-    
+    body {
+        background-color: rgb(226, 251, 255);
+    }
 </style>

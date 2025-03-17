@@ -1,0 +1,60 @@
+---
+import { Guardia } from "../utils/guardia.js";
+import { supabase } from "../lib/supabase.js";
+import GuardiaCard from "./GuardiaCard.astro";
+
+async function loadFilteredGuardias() {
+  // Get current session
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("User is not logged in");
+
+  // Fetch the user record from 'usuarios' using .single()
+  const { data: user, error: userError } = await supabase
+    .from("usuarios")
+    .select("id")
+    .eq("auth_id", session.user.id)
+    .single();
+  if (userError) throw userError;
+
+  // Fetch 'guardias' and 'asignaciones_guardia' sequentially (or use Promise.all if desired)
+  const { data: guardiasData, error: guardiasError } = await supabase
+    .from("guardias")
+    .select("*");
+  if (guardiasError) throw guardiasError;
+
+  const { data: asignacionesData, error: asignacionesError } = await supabase
+    .from("asignaciones_guardia")
+    .select("id_guardia")
+    .eq("id_profesor", user.id);
+  if (asignacionesError) throw asignacionesError;
+
+  // Map guardias to instances and filter by asignaciones
+  const guardias = guardiasData.map(
+    (g) =>
+      new Guardia({
+        id: g.id,
+        tipo: g.tipo,
+        inicio: g.inicio,
+        fin: g.fin,
+        observaciones: g.observaciones,
+        ausencias: g.ausencias,
+        id_aula: g.id_aula,
+      })
+  );
+
+  const asignacionesIds = asignacionesData.map((a) => a.id_guardia);
+  return guardias.filter((g) => asignacionesIds.includes(g.id));
+}
+
+// Use the function to get filtered guardias
+const filteredGuardias = await loadFilteredGuardias();
+
+
+---
+
+<!-- Add viewport meta in your layout if not already present --><!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+<div class="">
+    <div class="guardias-container">
+        {filteredGuardias?.map((guardia) => <GuardiaCard guardia={guardia} owned={true} />)}
+    </div>
+</div>

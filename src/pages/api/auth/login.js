@@ -44,8 +44,21 @@ export const POST = async ({ request, cookies, redirect }) => {
 
     // Guardar tokens en cookies
     const { access_token, refresh_token } = data.session;
-    cookies.set("sb-access-token", access_token, { path: "/" });
-    cookies.set("sb-refresh-token", refresh_token, { path: "/" });
+    cookies.set("sb-access-token", access_token, {
+        path: "/",           
+        httpOnly: true,      
+        secure: true,        
+        sameSite: "Strict",  
+        maxAge: 60 * 60 * 2  // ⏳ Expira en 2 horas (7200 segundos)
+    });
+    
+    cookies.set("sb-refresh-token", refresh_token, {
+        path: "/",
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+        maxAge: 60 * 60 * 24 * 7 // ⏳ Expira en 7 días (para renovar el access token)
+    });
 
     supabase.auth.setSession({
         refresh_token,

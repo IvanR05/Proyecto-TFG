@@ -1,0 +1,106 @@
+---
+import { randomUUID } from 'node:crypto';
+const componentId = randomUUID();
+---
+
+<div class="guardias-toggle" id={componentId}>
+  <!-- Toggle Header -->
+  <div class="container" >
+    <div class="slider">
+      <div class="state">
+        <span>Tus guardias</span>
+        <span class="arrow">→</span>
+      </div>
+      <div class="state">
+        <span class="arrow">←</span>
+        <span>Guardias disponibles</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Slots -->
+  <div class="content-wrapper">
+    <div class="content mis-guardias-content">
+      <slot name="mis-guardias" />
+    </div>
+    <div class="content guardias-content">
+      <slot name="guardias-disponibles" />
+    </div>
+  </div>
+</div>
+
+<style>
+  .guardias-toggle {
+    display: block;
+    cursor: pointer;
+    font-size: 18px;
+    text-align: center;
+  }
+
+  .container {
+    width: 100%;
+    overflow: hidden;
+    
+    margin-bottom: 1rem;
+    position: relative;
+  }
+
+  .slider {
+    display: flex;
+
+    width: 200%;
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .slider.left {
+    transform: translateX(-50%);
+  }
+
+  .state {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+
+    span {
+      font-size: 20px;
+    }
+  }
+
+  .content-wrapper {
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .content {
+    display: none;
+  }
+
+  .mis-guardias-content {
+    display: block;
+  }
+
+  .state-left .mis-guardias-content {
+    display: none;
+  }
+
+  .state-left .guardias-content {
+    display: block;
+  }
+</style>
+
+<script define:vars={{ componentId }} is:inline>
+  (function() {
+    const container = document.getElementById(componentId);
+    if (!container) return;
+
+    const slider = container.querySelector('.slider');
+
+    slider.addEventListener('click', () => {
+      const isLeft = slider.classList.toggle('left');
+      container.classList.toggle('state-left', isLeft);
+    });
+  })();
+</script>
