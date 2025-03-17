@@ -1,0 +1,262 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { supabase } from "../../lib/supabase.js";
+
+const { id } = Astro.params;
+const { data: usuario, error } = await supabase
+  .from("usuarios")
+  .select("*")
+  .eq("id", id)
+  .single();
+
+if (error || !usuario) {
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: "/ViewUsers",
+    },
+  });
+}
+---
+
+<Layout page_title={`Editar Usuario - ${usuario.nombre || "Sin nombre"}`}>
+  <main class="edit-form-container">
+    <h1>✏️ Editar Usuario</h1>
+    
+    <form id="edit-user-form">
+      <div class="form-group">
+        <label>Nombre:</label>
+        <input 
+          type="text" 
+          name="nombre" 
+          value={usuario.nombre || ""} 
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Correo:</label>
+        <input 
+          type="email" 
+          name="correo" 
+          value={usuario.correo} 
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Tipo de usuario:</label>
+        <select name="tipo" value={usuario.tipo}>
+          <option value="profesor">Profesor</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Estado:</label>
+        <div class="status-toggle">
+          <label>
+            <input 
+              type="checkbox" 
+              name="aceptado" 
+              checked={usuario.aceptado}
+            /> 
+            Usuario activo
+          </label>
+        </div>
+      </div>
+
+      <input type="hidden" name="id" value={usuario.id} />
+
+      <div class="form-actions">
+        <button type="submit" class="save-btn">💾 Guardar cambios</button>
+        <a href="/ViewUsers" class="cancel-btn">❌ Cancelar</a>
+      </div>
+    </form>
+  </main>
+
+  <script is:inline>
+    document.getElementById('edit-user-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        id: e.target.id.value,
+        nombre: e.target.nombre.value,
+        correo: e.target.correo.value,
+        tipo: e.target.tipo.value,
+        aceptado: e.target.aceptado.checked
+      };
+
+      try {
+        const response = await fetch('/api/update-user', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        if (response.ok) {
+          window.location.href = '/ViewUsers?success=Usuario actualizado';
+        } else {
+          alert('Error al actualizar el usuario');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión');
+      }
+    });
+  </script>
+<style>
+  /* Contenedor principal del formulario */
+  .edit-form-container {
+    max-width: 100%;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.5rem;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    font-family: 'Arial', sans-serif;
+    transition: all 0.3s ease;
+    box-sizing: border-box; /* Asegura que el padding no afecte al tamaño */
+  }
+
+  /* Título del formulario */
+  h1 {
+    font-size: 1.8rem;
+    color: #333;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Estilos generales de los grupos de formulario */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #444;
+  }
+
+  input, select, .status-toggle input {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box; /* Asegura que el padding no afecte al tamaño */
+  }
+
+  input:focus, select:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+  }
+
+  /* Estilos para el toggle de estado (activo/inactivo) */
+  .status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .status-toggle input {
+    width: auto;
+  }
+
+  /* Estilos para los botones de acción */
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .save-btn, .cancel-btn {
+    padding: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    width: 100%; /* Los botones ocupan todo el ancho */
+    transition: background 0.3s ease;
+    box-sizing: border-box; /* Asegura que el padding no afecte al tamaño */
+  }
+
+  .save-btn {
+    background: #4CAF50;
+    color: white;
+  }
+
+  .save-btn:hover {
+    background: #45a049;
+  }
+
+  .cancel-btn {
+    background: #f44336;
+    color: white;
+  }
+
+  .cancel-btn:hover {
+    background: #e53935;
+  }
+
+  /* Estilos para los enlaces (botón de cancelar) */
+  .form-actions a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Adaptación para pantallas móviles y pequeñas */
+  @media (max-width: 480px) {
+    /* Ajustes para el contenedor */
+    .edit-form-container {
+      margin: 0 1rem; /* Añadido margen a los lados */
+      padding: 1rem;
+    }
+
+    h1 {
+      font-size: 1.5rem; /* Tamaño de título reducido */
+    }
+
+    /* Agrupación de los campos y botones */
+    .form-group {
+      margin-bottom: 1.25rem; /* Reducido margen entre campos */
+    }
+
+    label {
+      font-size: 0.9rem; /* Reducido tamaño de texto de las etiquetas */
+    }
+
+    input, select {
+      padding: 0.9rem; /* Reducido padding para ajustarse mejor */
+      font-size: 0.95rem; /* Tamaño de fuente reducido */
+    }
+
+    .save-btn, .cancel-btn {
+      padding: 1rem; /* Ajustado padding para mejor encuadre */
+      font-size: 1rem; /* Tamaño de fuente ligeramente reducido */
+    }
+
+    .form-actions {
+      gap: 0.8rem; /* Menor espacio entre los botones */
+    }
+  }
+
+  /* Mejora visual para el enfoque de campos */
+  input:focus, select:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+  }
+</style>
+
+</Layout>
