@@ -70,7 +70,7 @@ const { data: usuarios, error } = await supabase
                     row.style.opacity = '0.5';
                     
                     const response = await fetch('/api/update-user', {
-                        method: 'POST',
+                        method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id, aceptado: isAccept })
                     });
