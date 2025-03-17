@@ -1,41 +1,111 @@
 ---
-import { School } from 'lucide-astro';
+import { School, Edit, Trash2 } from 'lucide-astro';
 const { id, grupo } = Astro.props;
 ---
 
 <div class="card-container">
-    <div class="icon-id-container">
-        <div class="icon-container">
-            <School size={35} />
-        </div>
-        <div class="id"><b>{id}</b></div>
+    <!-- Izquierda: Icono -->
+    <div class="icon-container">
+        <School size={30} />
     </div>
-    
-    <div class="grupo">{grupo}</div>
+
+    <!-- Derecha: Contenido (expande el espacio disponible) -->
+    <div class="content-container">
+        <!-- Fila 1: ID a la izquierda, Grupo a la derecha -->
+        <div class="info-row">
+            <span class="id"><b>{id}</b></span>
+            <span class="grupo">{grupo}</span>
+        </div>
+
+        <!-- Fila 2: Botones alineados a la derecha -->
+        <div class="buttons-row">
+            <a href={`/EditorAula?id=${id}&grupo=${grupo}&editando=true`} class="icon-button edit">
+                <Edit size={14} />
+            </a>
+            <a href="#" class="icon-button delete">
+                <Trash2 size={14} />
+            </a>
+        </div>
+    </div>
 </div>
 
 <style>
     .card-container {
         display: flex;
-        justify-content: space-between; /* Separa los bloques a los extremos */
         align-items: center;
-        padding: 15px 25px;
-        background-color: #f5f5f5;
-        border-radius: 8px;
+        padding: 12px;
+        background-color: white;
+        border-radius: 10px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        font-size: 15px;
+        font-size: 14px;
+        width: 100%;
+        min-height: 60px;
+        box-sizing: border-box;
     }
 
-    .icon-id-container {
-        display: flex;
-        align-items: center;
-    }
-
+    /* Icono alineado a la izquierda */
     .icon-container {
-        margin-right: 25px; /* Espacio entre el icono y el ID */
+        flex: 0 0 40px; /* Tamaño fijo para el icono */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 10px;
+    }
+
+    /* Contenedor de contenido (ahora ocupa todo el espacio disponible) */
+    .content-container {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1; /* Expande todo el espacio disponible */
+        justify-content: space-between;
+    }
+
+    /* Fila 1: ID a la izquierda, Grupo a la derecha */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 20px;
     }
 
     .grupo {
-        color: #333;
+        font-weight: bold;
+    }
+
+    /* Fila 2: Botones alineados a la derecha */
+    .buttons-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    /* Enlaces estilizados como botones */
+    .icon-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 4px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, transform 0.2s;
+        width: 24px;
+        height: 24px;
+        text-decoration: none; /* Elimina el subrayado de los enlaces */
+    }
+
+    .icon-button:hover {
+        background-color: #0056b3;
+        transform: scale(1.1);
+    }
+
+    .delete {
+        background-color: #dc3545;
+    }
+
+    .delete:hover {
+        background-color: #a71d2a;
     }
 </style>
