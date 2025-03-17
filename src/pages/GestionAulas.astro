@@ -14,9 +14,10 @@ import AulaCard from "../components/AulaCard.astro";
          <AulaCard id="Biblioteca" grupo="Espacio común"/>
     </div>
 
-    <button class="add-aula-button">
+    <!-- Usamos <a> en lugar de <button>, pero se comportará igual -->
+    <a href="/EditorAula?id=&grupo=&editando=false" class="add-aula-button">
         +
-    </button>
+    </a>
 
     <NavBar/>
 </Layout>
@@ -36,36 +37,38 @@ import AulaCard from "../components/AulaCard.astro";
         height: calc(100vh - 120px); /* Calcula el alto dejando espacio para el botón y la barra */
         overflow-y: auto; /* Habilita el scroll vertical */
         margin-bottom: 80px; /* Deja espacio para el botón flotante */
+        box-sizing: border-box;
         
         /* Aseguramos que los elementos estén en una columna con flexbox */
         display: flex;
         flex-direction: column; /* Alinea los elementos de forma vertical */
         gap: 10px; /* Espacio de 12px entre los elementos (aulas) */
     }
-  
+
+    /* Estilos para el enlace que actúa como un botón */
     .add-aula-button {
-        position: fixed;
-        bottom: 100px; /* Se asegura que el botón esté encima de la barra de navegación, dejando espacio de 80px */
-        left: 50%;
-        transform: translateX(-50%);
-        width: 60px;
-        height: 60px;
-        background-color: var(--color-secundario); /* Azul según tu esquema */
-        color: white;
-        border: none;
-        border-radius: 50%; /* Lo hace completamente redondo */
-        font-size: 32px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        cursor: pointer;
-        z-index: 10; /* Asegura que el botón quede por encima de otros elementos */
-    }
-  
-    .add-aula-button:hover {
+      position: fixed;
+      bottom: 100px; /* Se asegura que el botón esté encima de la barra de navegación, dejando espacio de 80px */
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      background-color: var(--color-secundario); /* Azul según tu esquema */
+      color: white;
+      text-decoration: none !important; /* Asegura que el subrayado se elimine */
+      border-radius: 50%; /* Lo hace completamente redondo */
+      font-size: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      z-index: 10; /* Asegura que el botón quede por encima de otros elementos */
+  }
+
+  .add-aula-button:hover {
       background-color: #2980b9; /* Cambia el color cuando pasa el ratón */
-    }
+  }
 
     body {
     margin: 0px;
