@@ -7,13 +7,15 @@ import MiniGuardiaCard from "./MiniGuardiaCard.astro";
 let turno;
 
 // Get current session
-const { data: { session } } = await supabase.auth.getSession();
+const {
+  data: { session },
+} = await supabase.auth.getSession();
 if (!session) throw new Error("User is not logged in");
 
 // Fetch the user record from 'usuarios' using .single()
 const { data: user, error: userError } = await supabase
   .from("usuarios")
-  .select("id")
+  .select("*")
   .eq("auth_id", session.user.id)
   .single();
 if (userError) throw userError;
@@ -28,7 +30,7 @@ if (turnoError) throw turnoError;
 
 turno = turnoData?.turno;
 
-// 2. Sacamos todas las guardias para el día de hoy 
+// 2. Sacamos todas las guardias para el día de hoy
 const today = new Date().toISOString().split("T")[0];
 const turnoActual = turnos[turno];
 
@@ -47,11 +49,18 @@ const { data: guardiasHoy, error: guardiasError } = await supabase
 
 if (guardiasError) throw guardiasError;
 
-console.log(guardiasHoy);
-
 // 3. Dividir las guardias en función de su tramo horario definido en turnos.json
 
-const slotKeys = ["primera", "segunda", "tercera", "recreo", "cuarta", "quinta", "sexta", "septima"];
+const slotKeys = [
+  "primera",
+  "segunda",
+  "tercera",
+  "recreo",
+  "cuarta",
+  "quinta",
+  "sexta",
+  "septima",
+];
 const guardiasPorTramo = slotKeys.reduce((acc, key) => {
   acc[key] = [];
   return acc;
@@ -62,7 +71,7 @@ function extraerHoraMinutos(timestamp) {
   return timestamp.slice(11, 16);
 }
 
-guardiasHoy.forEach(guardia => {
+guardiasHoy.forEach((guardia) => {
   const guardiaStart = extraerHoraMinutos(guardia.inicio);
   const guardiaEnd = extraerHoraMinutos(guardia.fin);
 
@@ -73,156 +82,116 @@ guardiasHoy.forEach(guardia => {
     }
   });
 });
-
-console.log("Guardias organizadas por tramo:", guardiasPorTramo);
-
-
 ---
 
 <div class="guardias-table">
-    <table>
-      <thead>
-        <tr>
-          <th>15:30-16:25</th>
-          <th>16:25-17:20</th>
-          <th>17:20-18:15</th>
-          <th>18:15-18:35</th>
-          <th>18:35-19:30</th>
-          <th>19:30-20:25</th>
-          <th>20:25-21:20</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <div class="time-column primera">
-              {guardiasPorTramo.primera.map((guardia) => (
-                <MiniGuardiaCard guardia={guardia} />
-              ))}
-            </div>
-          </td>
-          <td>
-            <div class="time-column segunda">
-              {guardiasPorTramo.segunda.map((guardia) => (
-                <MiniGuardiaCard guardia={guardia} />
-              ))}
-            </div>
-          </td>
-          <td>
-            <div class="time-column tercera">
-              {guardiasPorTramo.tercera.map((guardia) => (
-                <MiniGuardiaCard guardia={guardia} />
-              ))}
-            </div>
-          </td>
-          <td>
-            <div class="time-column recreo">
-              {guardiasPorTramo.recreo.map((guardia) => (
-                <MiniGuardiaCard guardia={guardia} />
-              ))}
-            </div>
-          </td>
-          <td>
-            <div class="time-column cuarta">
-              {guardiasPorTramo.cuarta.map((guardia) => (
-                <MiniGuardiaCard guardia={guardia} />
-              ))}
-            </div>
-          </td>
-          <td>
-            <div class="time-column quinta">
-              {guardiasPorTramo.quinta.map((guardia) => (
-                <MiniGuardiaCard guardia={guardia} />
-              ))}
-            </div>
-          </td>
-          <td>
-            <div class="time-column sexta">
-              {guardiasPorTramo.sexta.map((guardia) => (
-                <MiniGuardiaCard guardia={guardia} />
-              ))}
-            </div>
-          </td>
-          <td>
-            <div class="time-column septima">
-              {guardiasPorTramo.septima.map((guardia) => (
-                <MiniGuardiaCard guardia={guardia} />
-              ))}
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <table>
+    <thead>
+      <tr>
+        {
+          turnoActual.map((slot) => (
+            <th>
+              {slot.start}-{slot.end}
+            </th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        {
+          slotKeys.map((key) => (
+            <td>
+              <div class="time-column">
+                {guardiasPorTramo[key].length > 0 ? (
+                  guardiasPorTramo[key].map((guardia) => (
+                    <MiniGuardiaCard guardia={guardia} user={user} />
+                  ))
+                ) : (
+                  <div class="empty-slot">
+                    <span style="padding: 10px; border-radius: 10px; background-color: white;">
+                      Vacío
+                    </span>
+                  </div>
+                )}
+              </div>
+            </td>
+          ))
+        }
+      </tr>
+    </tbody>
+  </table>
+  
 
-    <script>
-        function updateTimeline() {
-          console.log("heeeloo")
-          const now = new Date();
-            now.setHours(19, 30, 0, 0);  // Set to 19:30 for testing
-          const currentHour = now.getHours();
-          const currentMinute = now.getMinutes();
-          const currentTimeInMinutes = currentHour * 60 + currentMinute;
-      
-          // Extract time slots from thead
-          const timeSlots = Array.from(document.querySelectorAll('.guardias-table thead th')).map(th => {
-              const [start, end] = th.textContent?.split('-') || [];
-              return { start, end };
-          });
-      
-          // Convert time to minutes
-          function timeToMinutes(time) {
-              const [hour, minute] = time.split(':').map(Number);
-              return hour * 60 + minute;
-          }
-      
-          // Find current slot and position within it
-          let currentSlotIndex = -1;
-          let positionInSlot = 0;
-      
-          timeSlots.forEach((slot, index) => {
-              const startMinutes = timeToMinutes(slot.start);
-              const endMinutes = timeToMinutes(slot.end);
-              if (currentTimeInMinutes >= startMinutes && currentTimeInMinutes < endMinutes) {
-                  currentSlotIndex = index;
-                  const slotDuration = endMinutes - startMinutes;
-                  const elapsedInSlot = currentTimeInMinutes - startMinutes;
-                  positionInSlot = (elapsedInSlot / slotDuration) * 100; // Percentage within the slot
-              }
-          });
-      
-          console.log("yes reachign here 2")
-          // Position the line if within a slot
-          if (currentSlotIndex !== -1) {
-              console.log("yes reachign here")
-              // Get the th element for the current slot
-              const thElement = document.querySelectorAll('.guardias-table thead th')[currentSlotIndex];
-              const columnLeft = (thElement as HTMLElement).offsetLeft;    // Left position of the column
-              const columnWidth = (thElement as HTMLElement).offsetWidth;  // Width of the column
-              const lineLeft = columnLeft + (positionInSlot / 100) * columnWidth; // Position within the column
-      
-              // Create or update the timeline element
-              let timeline = document.getElementById('current-time-line');
-              if (!timeline) {
-                  console.log("aaaa")
-                  timeline = document.createElement('div');
-                  timeline.id = 'current-time-line';
-                  document.querySelector('.guardias-table')?.appendChild(timeline);
-              }
-              timeline.style.left = `${lineLeft}px`;  // Set horizontal position
-          }
+  <script>
+    function updateTimeline() {
+      const now = new Date();
+      now.setHours(19, 30, 0, 0); // Set to 19:30 for testing
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+      // Extract time slots from thead
+      const timeSlots = Array.from(
+        document.querySelectorAll(".guardias-table thead th"),
+      ).map((th) => {
+        const [start, end] = th.textContent?.split("-") || [];
+        return { start, end };
+      });
+
+      // Convert time to minutes
+      function timeToMinutes(time) {
+        const [hour, minute] = time.split(":").map(Number);
+        return hour * 60 + minute;
       }
-      
-      // Initial update
-      updateTimeline();
-      
-      // Update every minute
-      setInterval(updateTimeline, 60000);
 
-      // Creación de la tabla dinamicamente
+      // Find current slot and position within it
+      let currentSlotIndex = -1;
+      let positionInSlot = 0;
 
+      timeSlots.forEach((slot, index) => {
+        const startMinutes = timeToMinutes(slot.start);
+        const endMinutes = timeToMinutes(slot.end);
+        if (
+          currentTimeInMinutes >= startMinutes &&
+          currentTimeInMinutes < endMinutes
+        ) {
+          currentSlotIndex = index;
+          const slotDuration = endMinutes - startMinutes;
+          const elapsedInSlot = currentTimeInMinutes - startMinutes;
+          positionInSlot = (elapsedInSlot / slotDuration) * 100; // Percentage within the slot
+        }
+      });
 
+      // Position the line if within a slot
+      if (currentSlotIndex !== -1) {
+        // Get the th element for the current slot
+        const thElement = document.querySelectorAll(".guardias-table thead th")[
+          currentSlotIndex
+        ];
+        const columnLeft = (thElement as HTMLElement).offsetLeft; // Left position of the column
+        const columnWidth = (thElement as HTMLElement).offsetWidth; // Width of the column
+        const lineLeft = columnLeft + (positionInSlot / 100) * columnWidth; // Position within the column
 
-    </script>
+        // Create or update the timeline element
+        let timeline = document.getElementById("current-time-line");
+        if (!timeline) {
+          timeline = document.createElement("div");
+          timeline.id = "current-time-line";
+          document.querySelector(".guardias-table")?.appendChild(timeline);
+        }
+        timeline.style.left = `${lineLeft}px`; // Set horizontal position
+      }
+    }
+
+    // Initial update
+    //updateTimeline();
+
+    // Update every minute
+    //setInterval(updateTimeline, 60000);
+
+    // Creación de la tabla dinamicamente
+  </script>
 </div>
 
 <style>
@@ -232,9 +201,8 @@ console.log("Guardias organizadas por tramo:", guardiasPorTramo);
     border: 1px solid #ddd;
     background-color: white;
     position: relative;
-    min-height: 200px;  /* Ensures the container has height */
     margin-bottom: 20px;
-}
+  }
 
   .guardias-table table {
     width: 100%;
@@ -253,41 +221,33 @@ console.log("Guardias organizadas por tramo:", guardiasPorTramo);
   }
 
   .guardias-table tbody td {
-    padding: 1rem;
     border-right: 1px solid #ddd;
     vertical-align: top;
-    max-height: 300px; /* Limita la altura de las celdas */
-    overflow-y: auto; /* Permite scroll vertical en las celdas */
+    height: 300px; /* TODO cambiar esto */
+    overflow-y: auto; /* Scroll if content overflows */
   }
 
   .time-column {
     display: flex;
     flex-direction: column;
+    height: 100%; /* Fill td height */
     gap: 0.5rem;
   }
 
-  .guard-shift {
-    padding: 0.5rem;
-    border-radius: 4px;
-  }
-
-  .guard-shift.disponible { background: #e6f7ff; }
-  .guard-shift.asignada { background: #f6ffed; }
-  .guard-shift.no-disponible { background: #fff1f0; }
-
-  .recreo {
-    background: #fff3e0;
-    padding: 1rem;
-    text-align: center;
+  .empty-slot {
+    flex-grow: 1; /* Expand to fill available space */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(252, 196, 92, 0.877);
   }
 
   #current-time-line {
     position: absolute;
-    top: 0;              /* Start at the top of .guardias-table */
-    width: 2px;          /* Thin vertical line */
-    height: 100%;        /* Span the full height of the table */
+    top: 0; /* Start at the top of .guardias-table */
+    width: 2px; /* Thin vertical line */
+    height: 100%; /* Span the full height of the table */
     background: red;
-    z-index: 100;        /* Ensure it’s above other content */
-}
+    z-index: 100; /* Ensure it’s above other content */
+  }
 </style>
-
