@@ -3,12 +3,33 @@ import Layout from "../../layouts/Layout.astro";
 import { supabase } from "../../lib/supabase.js";
 
 const { id } = Astro.params;
+// Obtener datos del usuario
 const { data: usuario, error } = await supabase
   .from("usuarios")
   .select("*")
   .eq("id", id)
   .single();
 
+// Obtener guardias existentes
+// Obtener guardias existentes con valor por defecto
+const { data: guardiasExistentes = [] } = await supabase
+  .from("horarios_profesor")
+  .select("id,dia_semana, inicio, fin, turno")
+  .eq("id_profesor", id);
+
+// Preparar datos de guardias
+const preloadedGuardias = (guardiasExistentes || []).map((g) => ({
+  id: g.id,
+  hora: `${g.inicio} - ${g.fin}`,
+  dia: g.dia_semana,
+  turno: g.turno,
+}));
+const serializedGuardias = JSON.stringify(preloadedGuardias);
+if (error || !usuario) {
+  alert("Hubo un problema al cargar los datos del usuario.");
+}
+
+// Redirección si hay error
 if (error || !usuario) {
   return new Response(null, {
     status: 302,
@@ -17,31 +38,38 @@ if (error || !usuario) {
     },
   });
 }
+
+// Determinar turno actual
+const turnoActual =
+  guardiasExistentes && guardiasExistentes.length > 0
+    ? guardiasExistentes[0].turno
+    : "diurno";
 ---
 
 <Layout page_title={`Editar Usuario - ${usuario.nombre || "Sin nombre"}`}>
+  <script set:html>
+    window.preloadedGuardiasData = JSON.parse(`{{ serializedGuardias }}`);
+        console.log("Datos de Supabase (guardias):", guardiasExistentes);
+    console.log("Datos serializados:", serializedGuardias);
+  </script>
+
   <main class="edit-form-container">
     <h1>✏️ Editar Usuario</h1>
-    
+
     <form id="edit-user-form">
       <div class="form-group">
         <label>Nombre:</label>
-        <input 
-          type="text" 
-          name="nombre" 
-          value={usuario.nombre || ""} 
+        <input
+          type="text"
+          name="nombre"
+          value={usuario.nombre || ""}
           required
         />
       </div>
 
       <div class="form-group">
         <label>Correo:</label>
-        <input 
-          type="email" 
-          name="correo" 
-          value={usuario.correo} 
-          required
-        />
+        <input type="email" name="correo" value={usuario.correo} required />
       </div>
 
       <div class="form-group">
@@ -56,207 +84,410 @@ if (error || !usuario) {
         <label>Estado:</label>
         <div class="status-toggle">
           <label>
-            <input 
-              type="checkbox" 
-              name="aceptado" 
-              checked={usuario.aceptado}
-            /> 
+            <input type="checkbox" name="aceptado" checked={usuario.aceptado} />
             Usuario activo
           </label>
         </div>
       </div>
 
+      <div class="form-group">
+        <label>Turno:</label>
+        <select name="turno">
+          <option value="diurno" selected={turnoActual === "diurno"}
+            >Diurno</option
+          >
+          <option value="vespertino" selected={turnoActual === "vespertino"}
+            >Vespertino</option
+          >
+        </select>
+      </div>
+
       <input type="hidden" name="id" value={usuario.id} />
 
       <div class="form-actions">
+        <button type="button" id="assignGuardsBtn" class="assign-btn"
+          >📅 Gestionar Guardias</button
+        >
         <button type="submit" class="save-btn">💾 Guardar cambios</button>
         <a href="/ViewUsers" class="cancel-btn">❌ Cancelar</a>
       </div>
     </form>
+
+    <!-- Modal de Horarios -->
+    <div id="scheduleTable">
+      <h3>Gestor de Guardias</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Horario</th>
+            <th>Lunes</th>
+            <th>Martes</th>
+            <th>Miércoles</th>
+            <th>Jueves</th>
+            <th>Viernes</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody"></tbody>
+      </table>
+      <div class="schedule-footer">
+        <div class="selection-counter">
+          🛡️ Seleccionadas: <span id="guardiasCount">0</span>/6
+        </div>
+        <button id="closeScheduleBtn" class="close-btn">✔️ Confirmar</button>
+      </div>
+    </div>
   </main>
 
   <script is:inline>
-    document.getElementById('edit-user-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = {
-        id: e.target.id.value,
-        nombre: e.target.nombre.value,
-        correo: e.target.correo.value,
-        tipo: e.target.tipo.value,
-        aceptado: e.target.aceptado.checked
-      };
+    // Inicializar con datos precargados
+    let selectedCells = window.preloadedGuardiasData || [];
+    const maxGuardias = 6;
 
+    // Función para debuggear las guardias cargadas
+    function logGuardias() {
+      console.log("Guardias precargadas:", window.preloadedGuardiasData);
+      console.log("Celdas seleccionadas:", selectedCells);
+    }
+
+    // Llamar a la función de debug al cargar
+    logGuardias();
+
+    async function loadHoras() {
       try {
-        const response = await fetch('/api/update-user', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
+        const response = await fetch("/src/assets/horario.json");
+        return await response.json();
+      } catch (error) {
+        console.error("Error cargando horario:", error);
+        return { diurno: [], vespertino: [] };
+      }
+    }
+
+    async function createScheduleTable() {
+      const horarios = await loadHoras();
+      const turno = document.querySelector('[name="turno"]').value;
+      const scheduleBody = document.getElementById("scheduleBody");
+
+      scheduleBody.innerHTML = "";
+      const horas = horarios[turno] || [];
+
+      horas.forEach((hora, i) => {
+        const row = document.createElement("tr");
+        const [inicio, fin] = hora.split(" - ");
+
+        // Celda de hora
+        const horaCell = document.createElement("td");
+        horaCell.textContent = hora;
+        row.appendChild(horaCell);
+
+        // Celdas de días
+        ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].forEach((dia) => {
+          const cell = document.createElement("td");
+          const cellId = `${dia}-${inicio}-${fin}`;
+
+          cell.dataset.id = cellId;
+          cell.dataset.hora = hora;
+          cell.dataset.dia = dia;
+          cell.dataset.turno = turno;
+
+          // Marcar como seleccionado si existe en los datos precargados
+          const exists = selectedCells.some(
+            (g) => g.id === cellId && g.turno === turno
+          );
+          if (exists) cell.classList.add("selected");
+
+          cell.addEventListener("click", () => toggleSelection(cell));
+          row.appendChild(cell);
         });
 
-        if (response.ok) {
-          window.location.href = '/ViewUsers?success=Usuario actualizado';
-        } else {
-          alert('Error al actualizar el usuario');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error de conexión');
+        scheduleBody.appendChild(row);
+      });
+
+      updateCounter();
+    }
+
+    function toggleSelection(cell) {
+      const cellId = cell.dataset.id;
+      const isSelected = cell.classList.contains("selected");
+
+      if (!isSelected && selectedCells.length >= maxGuardias) {
+        alert("Máximo 6 guardias permitidas");
+        return;
       }
+
+      cell.classList.toggle("selected");
+
+      if (isSelected) {
+        selectedCells = selectedCells.filter((g) => g.id !== cellId);
+      } else {
+        selectedCells.push({
+          id: cellId,
+          hora: cell.dataset.hora,
+          dia: cell.dataset.dia,
+          turno: cell.dataset.turno,
+        });
+      }
+      updateCounter();
+    }
+
+    function updateCounter() {
+      document.getElementById("guardiasCount").textContent =
+        selectedCells.length;
+    }
+
+    document.getElementById("assignGuardsBtn").addEventListener("click", () => {
+      document.getElementById("scheduleTable").style.display = "block";
+      createScheduleTable();
     });
+
+    document
+      .getElementById("closeScheduleBtn")
+      .addEventListener("click", () => {
+        document.getElementById("scheduleTable").style.display = "none";
+      });
+
+    document.querySelector('[name="turno"]').addEventListener("change", () => {
+      selectedCells = selectedCells.filter(
+        (g) => g.turno === document.querySelector('[name="turno"]').value
+      );
+      createScheduleTable();
+    });
+
+    document
+      .getElementById("edit-user-form")
+      .addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = {
+          id: e.target.id.value,
+          nombre: e.target.nombre.value,
+          correo: e.target.correo.value,
+          tipo: e.target.tipo.value,
+          aceptado: e.target.aceptado.checked,
+          turno: e.target.turno.value,
+          guardias: selectedCells.map((g) => ({
+            dia: g.dia,
+            inicio: g.hora.split(" - ")[0],
+            fin: g.hora.split(" - ")[1],
+            turno: g.turno,
+          })),
+        };
+
+        try {
+          const response = await fetch("/api/update-user", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formData),
+          });
+
+          if (response.ok) {
+            window.location.href = "/ViewUsers?success=Usuario actualizado";
+          } else {
+            alert("Error al actualizar el usuario");
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Error de conexión");
+        }
+      });
   </script>
-<style>
-  /* Contenedor principal del formulario */
-  .edit-form-container {
-    max-width: 100%;
-    width: 100%;
-    margin: 0 auto;
-    padding: 1.5rem;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-    font-family: 'Arial', sans-serif;
-    transition: all 0.3s ease;
-    box-sizing: border-box; /* Asegura que el padding no afecte al tamaño */
-  }
 
-  /* Título del formulario */
-  h1 {
-    font-size: 1.8rem;
-    color: #333;
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-
-  /* Estilos generales de los grupos de formulario */
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    font-size: 1rem;
-    color: #444;
-  }
-
-  input, select, .status-toggle input {
-    width: 100%;
-    padding: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    box-sizing: border-box; /* Asegura que el padding no afecte al tamaño */
-  }
-
-  input:focus, select:focus {
-    border-color: #4CAF50;
-    outline: none;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-  }
-
-  /* Estilos para el toggle de estado (activo/inactivo) */
-  .status-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1rem;
-  }
-
-  .status-toggle input {
-    width: auto;
-  }
-
-  /* Estilos para los botones de acción */
-  .form-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .save-btn, .cancel-btn {
-    padding: 1rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 600;
-    text-align: center;
-    width: 100%; /* Los botones ocupan todo el ancho */
-    transition: background 0.3s ease;
-    box-sizing: border-box; /* Asegura que el padding no afecte al tamaño */
-  }
-
-  .save-btn {
-    background: #4CAF50;
-    color: white;
-  }
-
-  .save-btn:hover {
-    background: #45a049;
-  }
-
-  .cancel-btn {
-    background: #f44336;
-    color: white;
-  }
-
-  .cancel-btn:hover {
-    background: #e53935;
-  }
-
-  /* Estilos para los enlaces (botón de cancelar) */
-  .form-actions a {
-    text-decoration: none;
-    color: inherit;
-  }
-
-  /* Adaptación para pantallas móviles y pequeñas */
-  @media (max-width: 480px) {
-    /* Ajustes para el contenedor */
+  <style>
     .edit-form-container {
-      margin: 0 1rem; /* Añadido margen a los lados */
-      padding: 1rem;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
 
-    h1 {
-      font-size: 1.5rem; /* Tamaño de título reducido */
+    #scheduleTable td.selected {
+      background: #48bb78 !important;
+      color: white;
+      border-color: #38a169;
     }
 
-    /* Agrupación de los campos y botones */
     .form-group {
-      margin-bottom: 1.25rem; /* Reducido margen entre campos */
+      margin-bottom: 1.5rem;
     }
 
     label {
-      font-size: 0.9rem; /* Reducido tamaño de texto de las etiquetas */
+      display: block;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 0.5rem;
     }
 
-    input, select {
-      padding: 0.9rem; /* Reducido padding para ajustarse mejor */
-      font-size: 0.95rem; /* Tamaño de fuente reducido */
+    input,
+    select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
     }
 
-    .save-btn, .cancel-btn {
-      padding: 1rem; /* Ajustado padding para mejor encuadre */
-      font-size: 1rem; /* Tamaño de fuente ligeramente reducido */
+    input:focus,
+    select:focus {
+      border-color: #4a90e2;
+      outline: none;
+    }
+
+    .status-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
     .form-actions {
-      gap: 0.8rem; /* Menor espacio entre los botones */
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 2rem;
     }
-  }
 
-  /* Mejora visual para el enfoque de campos */
-  input:focus, select:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-  }
-</style>
+    .save-btn,
+    .cancel-btn,
+    .assign-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+    }
 
+    .save-btn {
+      background: #48bb78;
+      color: white;
+    }
+
+    .save-btn:hover {
+      opacity: 0.9;
+    }
+
+    .cancel-btn {
+      background: #f56565;
+      color: white;
+    }
+
+    .cancel-btn:hover {
+      opacity: 0.9;
+    }
+
+    .assign-btn {
+      background: #4299e1;
+      color: white;
+    }
+
+    .assign-btn:hover {
+      opacity: 0.9;
+    }
+
+    #scheduleTable {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      max-width: 95%;
+      width: 1000px;
+    }
+
+    #scheduleTable table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+
+    #scheduleTable th {
+      background: #4299e1;
+      color: white;
+      padding: 1rem;
+      font-weight: 600;
+    }
+
+    #scheduleTable td {
+      border: 2px solid #e2e8f0;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    #scheduleTable td.selected {
+      background: #48bb78 !important;
+      color: white;
+      border-color: #38a169;
+    }
+
+    .time-slot {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    .schedule-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.5rem;
+    }
+
+    .selection-counter {
+      font-weight: 500;
+      color: #4a5568;
+    }
+
+    .close-btn {
+      background: #48bb78;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .close-btn:hover {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      #scheduleTable {
+        width: 95%;
+        padding: 1rem;
+      }
+
+      #scheduleTable td {
+        padding: 0.75rem;
+      }
+
+      .time-slot {
+        font-size: 0.8rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #scheduleTable th,
+      #scheduleTable td {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      .close-btn {
+        padding: 0.5rem 1rem;
+      }
+    }
+  </style>
 </Layout>
