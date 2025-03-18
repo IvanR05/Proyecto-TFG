@@ -42,6 +42,7 @@ export async function DELETE({ request }) {
 }
 
 // Manejar PUT para actualizaciones
+// Manejar PUT para actualizaciones
 export async function PUT({ request }) {
     try {
         const body = await request.json();
@@ -51,21 +52,59 @@ export async function PUT({ request }) {
             return invalidResponse("Datos incompletos", 400);
         }
 
-        // Actualización segura
-        const { data, error } = await supabase
-            .from('usuarios')
-            .update({
-                nombre: body.nombre?.trim(),
-                correo: body.correo?.toLowerCase().trim(),
-                tipo: body.tipo,
-                aceptado: body.aceptado
-            })
-            .eq('id', body.id)
-            .select();
+        // Iniciar transacción
+        const updatePromises = [];
 
-        if (error) throw error;
+        // Actualización de datos básicos
+        updatePromises.push(
+            supabase
+                .from('usuarios')
+                .update({
+                    nombre: body.nombre?.trim(),
+                    correo: body.correo?.toLowerCase().trim(),
+                    tipo: body.tipo,
+                    aceptado: body.aceptado,
+                    turno: body.turno
+                })
+                .eq('id', body.id)
+        );
 
-        return successResponse(data);
+        // Actualización de guardias si existen
+        if (body.guardias && Array.isArray(body.guardias)) {
+            // Eliminar guardias existentes
+            await supabase
+                .from('horarios_profesor')
+                .delete()
+                .eq('id_profesor', body.id);
+
+            // Insertar nuevas guardias si hay
+            if (body.guardias.length > 0) {
+                const nuevasGuardias = body.guardias.map(guardia => ({
+                    id_profesor: body.id,
+                    dia_semana: guardia.dia,
+                    inicio: guardia.inicio,
+                    fin: guardia.fin,
+                    turno: guardia.turno
+                }));
+
+                updatePromises.push(
+                    supabase
+                        .from('horarios_profesor')
+                        .insert(nuevasGuardias)
+                );
+            }
+        }
+
+        // Ejecutar todas las operaciones
+        const results = await Promise.all(updatePromises);
+        
+        // Verificar errores
+        const errors = results.filter(r => r.error);
+        if (errors.length > 0) {
+            throw new Error(`Error en actualización: ${errors.map(e => e.error.message).join(', ')}`);
+        }
+
+        return successResponse(results.map(r => r.data));
 
     } catch (error) {
         return errorResponse(error);

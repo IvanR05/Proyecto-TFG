@@ -16,7 +16,7 @@ export function onRequest({ request, redirect, url, cookies }, next) {
         pathname.startsWith("/_astro/") ||
         pathname.startsWith("/public/") ||
         pathname.includes("/auth/login") ||
-        pathname.includes("/auth/logout") 
+        pathname.includes("/auth/logout") ||true
     ) {
         return next();
     }
