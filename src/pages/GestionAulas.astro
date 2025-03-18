@@ -1,41 +1,19 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
-import AulaCard from "../components/AulaCard.astro";
+import AulasList from "../components/AulaList.astro";
 ---
 
 <AppLayout>
     <div class="content">
         <h1>Editor de aulas</h1>
         
-        <div class="aulas-list" id="aulas-list">
-            <!-- Las aulas se insertarán dinámicamente aquí -->
-        </div>
+        <!-- Render AulasList component with the fetched data -->
+        <AulasList />
 
         <a href="/EditorAula?id=&grupo=&editando=false" class="add-aula-button">
             +
         </a>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", async () => {
-            try {
-                const response = await fetch("/api/get-aulas");
-                const aulas = await response.json();
-                const aulasList = document.getElementById("aulas-list");
-
-                console.log(aulas)
-                
-                aulas.forEach(aula => {
-                    aulasList.innerHTML += `
-                        <AulaCard id="${aula.id_aula}" grupo="${aula.curso}"></AulaCard>
-                    `;
-                });
-            } catch (error) {
-                console.error("Error cargando las aulas:", error);
-            }
-        });
-    </script>
-</AppLayout>
 
 <style>
     :root {
@@ -44,20 +22,6 @@ import AulaCard from "../components/AulaCard.astro";
       --color-texto: #2C3E50;
       --color-fondo: #b0f7fc;
       --sombra: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Contenedor de aulas desplazable */
-    .aulas-list {
-        padding: 16px;
-        height: calc(100vh - 120px); /* Calcula el alto dejando espacio para el botón y la barra */
-        overflow-y: auto; /* Habilita el scroll vertical */
-        margin-bottom: 80px; /* Deja espacio para el botón flotante */
-        box-sizing: border-box;
-        
-        /* Aseguramos que los elementos estén en una columna con flexbox */
-        display: flex;
-        flex-direction: column; /* Alinea los elementos de forma vertical */
-        gap: 10px; /* Espacio de 12px entre los elementos (aulas) */
     }
 
     /* Estilos para el enlace que actúa como un botón */
@@ -85,7 +49,7 @@ import AulaCard from "../components/AulaCard.astro";
       background-color: #2980b9; /* Cambia el color cuando pasa el ratón */
   }
 
-    body {
+  body {
     margin: 0px;
     background-color: rgb(226, 251, 255);
     color: var(--color-texto);

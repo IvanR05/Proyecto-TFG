@@ -22,9 +22,9 @@ const { id, grupo } = Astro.props;
             <a href={`/EditorAula?id=${id}&grupo=${grupo}&editando=true`} class="icon-button edit">
                 <Edit size={14} />
             </a>
-            <button class="icon-button delete" onclick={`setTimeout(() => eliminarAula('${id}'), 0)`}>
+            <a href="#" class="icon-button delete" onclick={`setTimeout(() => eliminarAula('${id}'), 0); return false;`}>
                 <Trash2 size={14} />
-            </button>
+            </a>
         </div>
     </div>
 </div>
@@ -134,5 +134,10 @@ const { id, grupo } = Astro.props;
 
     .delete:hover {
         background-color: #a71d2a;
+    }
+
+    .icon-button svg {
+        width: 16px; /* Asegura que todos los íconos tengan el mismo ancho */
+        height: 16px; /* Asegura que todos los íconos tengan el mismo alto */
     }
 </style>

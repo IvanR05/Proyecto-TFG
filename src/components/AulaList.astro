@@ -1,0 +1,46 @@
+---
+import { Aula } from '../utils/aula.js';
+import { supabase } from "../lib/supabase.js";
+import AulaCard from './AulaCard.astro';
+
+// Fetch aulas data from Supabase
+const { data: aulasData, error: aulasError } = await supabase
+  .from('aulas')
+  .select('*');
+
+// Check for errors
+if (aulasError) {
+  console.error("Error fetching data: ", aulasError);
+}
+
+// Create an array of Aula instances
+const aulas = aulasData?.map((aula) => 
+  new Aula({
+    id_aula: aula.id_aula || '',
+    curso: aula.curso || '',
+  })
+);
+---
+
+<div class="">
+  
+  <div class="aulas-list">
+    {
+      aulas?.map((aula) => (
+        <AulaCard id={aula.id_aula} grupo={aula.curso} />
+      ))
+    }
+  </div>
+</div>
+
+<style>
+    .aulas-list {
+        margin-bottom: 80px; /* Deja espacio para el botón flotante */
+        box-sizing: border-box;
+        
+        /* Aseguramos que los elementos estén en una columna con flexbox */
+        display: flex;
+        flex-direction: column; /* Alinea los elementos de forma vertical */
+        gap: 10px; /* Espacio de 12px entre los elementos (aulas) */
+    }
+</style>
