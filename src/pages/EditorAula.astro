@@ -1,34 +1,89 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
-import NavBar from "../components/NavBar.astro";
 
-// Recuperamos los datos pasados por parámetros URL al cambiar de página
 const queryParams = new URL(Astro.request.url).searchParams;
-let id = queryParams.get('id');
-let grupo = queryParams.get('grupo');
+const id = queryParams.get('id');
+const grupo = queryParams.get('grupo');
 const editando = queryParams.get('editando');
-
-// Si no estamos editando, se ponen placeholders
-if (editando === 'false') {
-    id = 'Nombre del aula';
-    grupo = 'Curso';
-}
 ---
 
 <AppLayout page_title="Formulario">
   <div class="content">
     <h1>Editor de aulas</h1>
     <div class="inputs">
-      <input id="idInput" type="text" placeholder={id} />
-      <input id="grupoInput" type="text" placeholder={grupo} />
+      <input
+        id="idInput"
+        type="text"
+        placeholder="Nombre del aula"
+        value={editando === 'true' ? id : ''}
+      />
+      <input
+        id="grupoInput"
+        type="text"
+        placeholder="Curso"
+        value={editando === 'true' ? grupo : ''}
+      />
     </div>
     <div class="buttons">
-        <button class="aceptar" onclick="handleSubmit()">Aceptar</button>
-        <button class="cancelar" onclick="window.location.href='/GestionAulas'">Cancelar</button>
-      <br><br><br>
+      <button class="aceptar" onclick={`setTimeout(() => handleSubmit(), 0)`}>Aceptar</button>
+      <button class="cancelar" onclick="window.location.href='/GestionAulas'">Cancelar</button>
     </div>
   </div>
 </AppLayout>
+
+<script is:inline>
+    async function handleSubmit() {
+        const idInput = document.getElementById('idInput').value.trim();
+        const grupoInput = document.getElementById('grupoInput').value.trim();
+
+        if (!idInput || !grupoInput) {
+            alert("Por favor, completa todos los campos.");
+            return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const editando = urlParams.get('editando');
+        
+        let aulaData = {};
+        let url = '';
+        let method = '';
+
+        if (editando === 'true') {
+            url = '/api/update-aula';
+            method = 'PUT';
+            const idOriginal = urlParams.get('id');
+            aulaData = {
+                id_original: idOriginal,  // Nombre correcto para el PUT
+                id_nuevo: idInput,
+                curso_nuevo: grupoInput
+            };
+        } else {
+            url = '/api/add-aula';
+            method = 'POST';
+            aulaData = {
+                id_aula: idInput,  // Nombre correcto para el POST
+                curso: grupoInput
+            };
+        }
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(aulaData)
+            });
+
+            const result = await response.json();
+            
+            if (!response.ok) throw new Error(result.message || 'Error desconocido');
+
+            alert(result.message);
+            window.location.href = "/GestionAulas";
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+        }
+    }
+</script>
 
 <style>
     :root {

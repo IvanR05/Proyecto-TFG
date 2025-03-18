@@ -22,12 +22,39 @@ const { id, grupo } = Astro.props;
             <a href={`/EditorAula?id=${id}&grupo=${grupo}&editando=true`} class="icon-button edit">
                 <Edit size={14} />
             </a>
-            <a href="#" class="icon-button delete">
+            <button class="icon-button delete" onclick={`setTimeout(() => eliminarAula('${id}'), 0)`}>
                 <Trash2 size={14} />
-            </a>
+            </button>
         </div>
     </div>
 </div>
+
+<script is:inline>
+    async function eliminarAula(id_aula) {
+        if (!confirm(`¿Seguro que quieres eliminar el aula ${id_aula}?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/delete-aula', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_aula }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert('Aula eliminada correctamente');
+                location.reload(); // 🔄 Recargar la página para reflejar los cambios
+            } else {
+                alert(`Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Error eliminando el aula:', error);
+            alert('Hubo un problema al eliminar el aula.');
+        }
+    }
+</script>
 
 <style>
     .card-container {

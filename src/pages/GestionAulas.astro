@@ -1,24 +1,40 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
-import NavBar from "../components/NavBar.astro";
 import AulaCard from "../components/AulaCard.astro";
 ---
 
 <AppLayout>
-    <div class="aulas-list">
-        <!-- Los componentes de aula se añadirán aquí dinámicamente -->
-         <AulaCard id="A-01" grupo="2ºA"/>
-         <AulaCard id="B-07" grupo="1ºA"/>
-         <AulaCard id="A-05-D" grupo="2ºD"/>
-         <AulaCard id="B-08" grupo="1ºSMR B y 1ºASIR"/>
-         <AulaCard id="Biblioteca" grupo="Espacio común"/>
+    <div class="content">
+        <h1>Editor de aulas</h1>
+        
+        <div class="aulas-list" id="aulas-list">
+            <!-- Las aulas se insertarán dinámicamente aquí -->
+        </div>
+
+        <a href="/EditorAula?id=&grupo=&editando=false" class="add-aula-button">
+            +
+        </a>
     </div>
 
-    <!-- Usamos <a> en lugar de <button>, pero se comportará igual -->
-    <a href="/EditorAula?id=&grupo=&editando=false" class="add-aula-button">
-        +
-    </a>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            try {
+                const response = await fetch("/api/get-aulas");
+                const aulas = await response.json();
+                const aulasList = document.getElementById("aulas-list");
 
+                console.log(aulas)
+                
+                aulas.forEach(aula => {
+                    aulasList.innerHTML += `
+                        <AulaCard id="${aula.id_aula}" grupo="${aula.curso}"></AulaCard>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error cargando las aulas:", error);
+            }
+        });
+    </script>
 </AppLayout>
 
 <style>
