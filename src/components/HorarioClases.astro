@@ -1,3 +1,84 @@
+---
+import { supabase } from "../lib/supabase";
+import turnos from "../assets/turnos.json";
+import MiniGuardiaCard from "./MiniGuardiaCard.astro";
+
+// 1. Primero obtenemos el turno al que pertenece el usuario
+let turno;
+
+// Get current session
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) throw new Error("User is not logged in");
+
+// Fetch the user record from 'usuarios' using .single()
+const { data: user, error: userError } = await supabase
+  .from("usuarios")
+  .select("id")
+  .eq("auth_id", session.user.id)
+  .single();
+if (userError) throw userError;
+
+const { data: turnoData, error: turnoError } = await supabase
+  .from("horarios_profesor")
+  .select("turno, inicio")
+  .eq("id_profesor", user.id)
+  .single();
+
+if (turnoError) throw turnoError;
+
+turno = turnoData?.turno;
+
+// 2. Sacamos todas las guardias para el día de hoy 
+const today = new Date().toISOString().split("T")[0];
+const turnoActual = turnos[turno];
+
+if (!turnoActual) {
+  throw new Error("Turno no válido");
+}
+
+const inicioTurno = `${today}T${turnoActual[0].start}:00`;
+const finTurno = `${today}T${turnoActual[turnoActual.length - 1].end}:00`;
+
+const { data: guardiasHoy, error: guardiasError } = await supabase
+  .from("guardias")
+  .select("*")
+  .gte("inicio", inicioTurno)
+  .lte("fin", finTurno);
+
+if (guardiasError) throw guardiasError;
+
+console.log(guardiasHoy);
+
+// 3. Dividir las guardias en función de su tramo horario definido en turnos.json
+
+const slotKeys = ["primera", "segunda", "tercera", "recreo", "cuarta", "quinta", "sexta", "septima"];
+const guardiasPorTramo = slotKeys.reduce((acc, key) => {
+  acc[key] = [];
+  return acc;
+}, {});
+
+// Función auxiliar para extraer "HH:MM" sin conversión de zona horaria
+function extraerHoraMinutos(timestamp) {
+  return timestamp.slice(11, 16);
+}
+
+guardiasHoy.forEach(guardia => {
+  const guardiaStart = extraerHoraMinutos(guardia.inicio);
+  const guardiaEnd = extraerHoraMinutos(guardia.fin);
+
+  turnoActual.forEach((slot, index) => {
+    if (slot.start === guardiaStart && slot.end === guardiaEnd) {
+      const key = slotKeys[index];
+      guardiasPorTramo[key].push(guardia);
+    }
+  });
+});
+
+console.log("Guardias organizadas por tramo:", guardiasPorTramo);
+
+
+---
+
 <div class="guardias-table">
     <table>
       <thead>
@@ -14,37 +95,59 @@
       <tbody>
         <tr>
           <td>
-            <div class="time-column">
-              <div class="guard-shift disponible">Guardia disponible - Aula 203</div>
-              <div class="guard-shift asignada">Guardia asignada - Lab 1</div>
+            <div class="time-column primera">
+              {guardiasPorTramo.primera.map((guardia) => (
+                <MiniGuardiaCard guardia={guardia} />
+              ))}
             </div>
           </td>
           <td>
-            <div class="time-column">
-              <div class="guard-shift disponible">Guardia disponible - Aula 105</div>
+            <div class="time-column segunda">
+              {guardiasPorTramo.segunda.map((guardia) => (
+                <MiniGuardiaCard guardia={guardia} />
+              ))}
             </div>
           </td>
           <td>
-            <div class="time-column">
-              <div class="guard-shift asignada">Guardia asignada - Aula 110</div>
+            <div class="time-column tercera">
+              {guardiasPorTramo.tercera.map((guardia) => (
+                <MiniGuardiaCard guardia={guardia} />
+              ))}
             </div>
           </td>
           <td>
-            <div class="recreo">RECREO</div>
-          </td>
-          <td>
-            <div class="time-column">
-              <div class="guard-shift disponible">Guardia disponible - Aula 215</div>
+            <div class="time-column recreo">
+              {guardiasPorTramo.recreo.map((guardia) => (
+                <MiniGuardiaCard guardia={guardia} />
+              ))}
             </div>
           </td>
           <td>
-            <div class="time-column">
-              <div class="guard-shift no-disponible">Guardia no disponible - Aula 305</div>
+            <div class="time-column cuarta">
+              {guardiasPorTramo.cuarta.map((guardia) => (
+                <MiniGuardiaCard guardia={guardia} />
+              ))}
             </div>
           </td>
           <td>
-            <div class="time-column">
-              <div class="guard-shift disponible">Guardia disponible - Aula 201</div>
+            <div class="time-column quinta">
+              {guardiasPorTramo.quinta.map((guardia) => (
+                <MiniGuardiaCard guardia={guardia} />
+              ))}
+            </div>
+          </td>
+          <td>
+            <div class="time-column sexta">
+              {guardiasPorTramo.sexta.map((guardia) => (
+                <MiniGuardiaCard guardia={guardia} />
+              ))}
+            </div>
+          </td>
+          <td>
+            <div class="time-column septima">
+              {guardiasPorTramo.septima.map((guardia) => (
+                <MiniGuardiaCard guardia={guardia} />
+              ))}
             </div>
           </td>
         </tr>
@@ -114,7 +217,12 @@
       
       // Update every minute
       setInterval(updateTimeline, 60000);
-      </script>
+
+      // Creación de la tabla dinamicamente
+
+
+
+    </script>
 </div>
 
 <style>
