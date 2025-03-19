@@ -4,7 +4,7 @@ import AulasList from "../components/AulaList.astro";
 ---
 
 <AppLayout>
-    <div class="content">
+    <div>
         <h1>Editor de aulas</h1>
         
         <!-- Render AulasList component with the fetched data -->
@@ -14,39 +14,40 @@ import AulasList from "../components/AulaList.astro";
             +
         </a>
     </div>
+</AppLayout>
 
 <style>
-    :root {
-      --color-primario: #2C3E50;
-      --color-secundario: #3498DB;
-      --color-texto: #2C3E50;
-      --color-fondo: #b0f7fc;
-      --sombra: 0 4px 8px rgba(0, 0, 0, 0.15);
-    }
+  :root {
+    --color-primario: #2C3E50;
+    --color-secundario: #3498DB;
+    --color-texto: #2C3E50;
+    --color-fondo: #b0f7fc;
+    --sombra: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
 
     /* Estilos para el enlace que actúa como un botón */
-    .add-aula-button {
-      position: fixed;
-      bottom: 100px; /* Se asegura que el botón esté encima de la barra de navegación, dejando espacio de 80px */
-      left: 50%;
-      transform: translateX(-50%);
-      width: 60px;
-      height: 60px;
-      background-color: var(--color-secundario); /* Azul según tu esquema */
-      color: white;
-      text-decoration: none !important; /* Asegura que el subrayado se elimine */
-      border-radius: 50%; /* Lo hace completamente redondo */
-      font-size: 32px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      z-index: 10; /* Asegura que el botón quede por encima de otros elementos */
+  .add-aula-button {
+    position: fixed;
+    bottom: 100px; /* Se asegura que el botón esté encima de la barra de navegación, dejando espacio de 80px */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 60px;
+    background-color: var(--color-secundario); /* Azul según tu esquema */
+    color: white;
+    text-decoration: none !important; /* Asegura que el subrayado se elimine */
+    border-radius: 50%; /* Lo hace completamente redondo */
+    font-size: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 10; /* Asegura que el botón quede por encima de otros elementos */
   }
 
   .add-aula-button:hover {
-      background-color: #2980b9; /* Cambia el color cuando pasa el ratón */
+    background-color: #2980b9; /* Cambia el color cuando pasa el ratón */
   }
 
   body {
@@ -58,12 +59,5 @@ import AulasList from "../components/AulaList.astro";
     align-items: flex-start;
     min-height: 100vh;
     font-family: 'Merriweather', serif;
-  }
-  
-  .container {
-    width: 100%;
-    max-width: 380px;
-    padding: 16px;
-    box-sizing: border-box;
   }
 </style>

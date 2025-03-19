@@ -23,12 +23,11 @@ if (userError) throw userError;
 const { data: turnoData, error: turnoError } = await supabase
   .from("horarios_profesor")
   .select("turno, inicio")
-  .eq("id_profesor", user.id)
-  .single();
+  .eq("id_profesor", user.id);
 
 if (turnoError) throw turnoError;
 
-turno = turnoData?.turno;
+turno = turnoData[0].turno;
 
 // 2. Sacamos todas las guardias para el día de hoy
 const today = new Date().toISOString().split("T")[0];

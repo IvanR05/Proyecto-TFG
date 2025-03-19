@@ -1,0 +1,141 @@
+---
+import { supabase } from "../lib/supabase.js";
+import { Bell } from 'lucide-astro';
+
+// Recuperar sesión actual
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) throw new Error("User is not logged in");
+
+// Recuperar usuario actual con la id de usuario de la sesión actual
+const { data: user, error: userError } = await supabase
+  .from("usuarios")
+  .select("*")
+  .eq("auth_id", session.user.id)
+  .single();
+if (userError) throw userError;
+
+const userId = user.id;
+
+// Consulta para obtener las notificaciones asociadas al usuario mediante inner join
+const { data: notificaciones, error: notifError } = await supabase
+  .from("notificacion")
+  .select(`
+    id,
+    mensaje,
+    created_at,
+    visto,
+    asignaciones_notificaciones!inner(
+      id,
+      id_usuario
+    )
+  `)
+  .eq("asignaciones_notificaciones.id_usuario", userId);
+
+if (notifError) throw notifError;
+---
+
+<div class="list">
+    {notificaciones?.length > 0 ? (
+        notificaciones.map((n) => (
+            <div class={`notification ${!n.visto ? "new" : ""}`} data-id={n.id}>
+                <div class="notification-info">
+                    <p class="message">{n.mensaje}</p>
+                    <span class="date">{new Date(n.created_at).toLocaleString()}</span>
+                </div>
+                <div class="notification-icon">
+                    <Bell size={24} color={!n.visto ? "#3498DB" : "currentColor"} />
+                </div>
+            </div>
+        ))
+    ) : (
+      <p>No tienes notificaciones</p>
+    )}
+</div>
+
+<!-- Script para marcar las notificaciones nuevas como vistas -->
+<script client:load type="module">
+  import { supabase } from "../lib/supabase.js";
+  
+  async function markNotificationsAsSeen() {
+    // Selecciona las notificaciones marcadas como "new" (no vistas)
+    const newNotifs = document.querySelectorAll('.notification.new');
+    if (newNotifs.length === 0) return;
+    
+    // Extraer los IDs de las notificaciones nuevas
+    const ids = Array.from(newNotifs).map(el => el.dataset.id);
+    
+    // Actualizar en la base de datos: poner visto = true para los IDs obtenidos
+    const { error } = await supabase
+      .from('notificacion')
+      .update({ visto: true })
+      .in('id', ids);
+      
+    if (error) {
+      console.error("Error actualizando notificaciones:", error);
+    } else {
+      // Quitar la clase "new" para actualizar visualmente el estado
+      newNotifs.forEach(el => el.classList.remove('new'));
+    }
+  }
+  
+  // Después de 2 segundos se marcan las notificaciones como vistas
+  setTimeout(markNotificationsAsSeen, 2000);
+</script>
+
+<style>
+  .notification-container {
+    width: 100%;
+    max-width: 500px;
+    margin: auto;
+    padding: 20px;
+    border-radius: 10px;
+    background: #f9f9f9;
+  }
+  
+  h2 {
+    text-align: center;
+  }
+  
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .notification {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 5px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: border-left 0.3s ease;
+  }
+  
+  /* Indicador visual para notificaciones no vistas */
+  .notification.new {
+    border-left: 4px solid #3498DB;
+  }
+  
+  .notification-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .message {
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  .date {
+    font-size: 12px;
+    color: gray;
+    margin-top: 5px;
+  }
+  
+  .notification-icon {
+    display: flex;
+    align-items: center;
+  }
+</style>

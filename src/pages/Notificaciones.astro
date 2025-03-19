@@ -1,0 +1,32 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import NotificationList from "../components/NotificationList.astro";
+---
+<AppLayout>
+    <div>
+        <h1>Notificaciones</h1>
+        
+        <NotificationList></NotificationList>
+    </div>
+</AppLayout>
+
+<style>
+    :root {
+        --color-primario: #2C3E50;
+        --color-secundario: #3498DB;
+        --color-texto: #2C3E50;
+        --color-fondo: #b0f7fc;
+        --sombra: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+        margin: 0px;
+        background-color: rgb(226, 251, 255);
+        color: var(--color-texto);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        font-family: 'Merriweather', serif;
+    }
+</style>
