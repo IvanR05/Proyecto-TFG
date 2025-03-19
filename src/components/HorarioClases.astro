@@ -150,44 +150,60 @@ guardiasHoy.forEach((guardia) => {
   }
 
   .guardias-table thead th {
-    position: sticky; /* Fija el encabezado en la parte superior */
+    position: sticky;
     top: 0;
-    background: #f5f5f5; /* Fondo para que no se trasluzca el contenido */
+    background: #f5f5f5;
     padding: 1rem;
     text-align: center;
     border-right: 1px solid #ddd;
-    z-index: 10; /* Asegura que esté sobre el contenido */
-    min-width: 140px; /* Ancho mínimo para las columnas */
+    z-index: 10;
+    min-width: 140px;
   }
 
+  /* Set fixed height for table cells */
   .guardias-table tbody td {
     border-right: 1px solid #ddd;
     vertical-align: top;
-    height: 300px; /* TODO cambiar esto */
-    overflow-y: auto; /* Scroll if content overflows */
+    height: fit-content; /* Fixed height for all cells */
   }
 
+  
+
+  /* Make time-column scrollable */
   .time-column {
     display: flex;
+    flex-grow: 1;
     flex-direction: column;
-    height: 100%; /* Fill td height */
+    height: 100%; /* Take full height of parent td */
+    overflow-y: auto; /* Enable vertical scrolling */
     gap: 0.5rem;
   }
 
   .empty-slot {
-    flex-grow: 1; /* Expand to fill available space */
     display: flex;
+    flex-grow: 1;
     align-items: center;
     justify-content: center;
     background-color: rgba(252, 196, 92, 0.877);
+    height: 100%; /* Fill parent height */
+    width: 100%; /* Full width */
+    padding: 10px; /* Move padding here from inner span */
+    box-sizing: border-box; /* Include padding in height calculation */
+  }
+
+  .empty-slot span {
+    display: block;
+    border-radius: 10px;
+    background-color: white;
+    padding: 10px;
   }
 
   #current-time-line {
     position: absolute;
-    top: 0; /* Start at the top of .guardias-table */
-    width: 2px; /* Thin vertical line */
-    height: 100%; /* Span the full height of the table */
+    top: 0;
+    width: 2px;
+    height: 100%;
     background: red;
-    z-index: 100; /* Ensure it’s above other content */
+    z-index: 100;
   }
 </style>
