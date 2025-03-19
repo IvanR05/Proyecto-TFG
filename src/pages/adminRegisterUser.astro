@@ -408,7 +408,7 @@
             cell.style.backgroundColor = "white"; // Forzar fondo blanco
             cell.style.border = "2px solid #000"; // Asegurar el borde desde el inicio
 
-            // Verificar si la celda fue seleccionada previamente y restaurar el estado
+            // Verificar si la celda fue seleccionada previamente y restaurar el estado 
             const cellId = `${i}-${j}`;
             if (selectedCells.includes(cellId)) {
               cell.classList.add("selected");
@@ -492,7 +492,7 @@
                 selectedGuards.push({
                   horaInicio: horaInicio.trim(), // Asignar la hora de inicio
                   horaFin: horaFin.trim(), // Asignar la hora de fin
-                  dia: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"][
+                  dia: ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes"][
                     dayIndex - 1
                   ],
                 });
