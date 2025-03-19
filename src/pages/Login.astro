@@ -11,7 +11,7 @@ const { cookies, redirect } = Astro;
     <div class="login-card">
         <h1>Iniciar sesión</h1>
         <p>¿Nuevo aquí? <a href="/Register">Crea una cuenta</a></p>
-        <form action="/api/auth/login" method="post" class="login-form">
+        <form action="/api/auth/login" method="POST" class="login-form">
             <div class="input-group">
                 <label for="email">Correo electrónico</label>
                 <input type="email" name="email" id="email" required placeholder="nombre@correo.com" />

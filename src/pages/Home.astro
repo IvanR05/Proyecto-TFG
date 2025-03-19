@@ -1,18 +1,28 @@
 ---
-
-
-import Layout from "../layouts/Layout.astro";
+import { supabase } from "../lib/supabase.js";
 import AppLayout from "../layouts/AppLayout.astro";
 import HorarioClases from "../components/HorarioClases.astro";
-import NavBar from "../components/NavBar.astro";
 import FreeGuardiasDisplayer from "../components/FreeGuardiasDisplayer.astro";
-import GuardiaCard from "../components/GuardiaCard.astro";
 import GuardiasToggle from "../components/GuardiasToggle.astro";
 import OwnedGuardiasDisplayer from "../components/OwnedGuardiasDisplayer.astro";
+
+// Get current session
+const {
+  data: { session },
+} = await supabase.auth.getSession();
+if (!session) throw new Error("User is not logged in");
+
+// Fetch the user record from 'usuarios' using .single()
+const { data: user, error: userError } = await supabase
+  .from("usuarios")
+  .select("*")
+  .eq("auth_id", session.user.id)
+  .single();
+if (userError) throw userError;
 ---
 
 <AppLayout page_title="Home">
-    <h1>Bienvenido <span id="userName"></span></h1>
+    <h1>Bienvenido <span id="userName">{user.nombre}</span></h1>
     <p>Este es el horario para el día de hoy:</p>
     <HorarioClases />
 
@@ -27,15 +37,6 @@ import OwnedGuardiasDisplayer from "../components/OwnedGuardiasDisplayer.astro";
       </GuardiasToggle>
     <br><br><br><br><br><br> <!--Deja espacio para la NavBar -->
 </AppLayout>
-
-<script type="module">
-    const userData = await fetch("/api/auth/get-user");
-
-    if (userData.ok) {
-        const user = await userData.json();
-        document.getElementById("userName").textContent = user.nombre;
-    }
-</script>
 
 <style>
     body {

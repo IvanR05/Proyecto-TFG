@@ -1,6 +1,9 @@
 ---
-const { guardia, owned } = Astro.props;
+import { isAborted } from "astro:schema";
+
+const { guardia, owned, isAdmin } = Astro.props;
 const guardiaData = JSON.stringify(guardia);
+const admin = isAdmin;
 
 function getDate(date) {
   const options = { weekday: "long", day: "numeric", month: "long" };
@@ -14,10 +17,11 @@ function formatTime(date) {
     minute: "2-digit",
   });
 }
+
 ---
 
 <!-- Contenedor de la guardia -->
-<div class="guardia-container" data-guardia={guardiaData} data-owned={owned}>
+<div class="guardia-container" data-guardia={guardiaData} data-owned={owned} data-admin={admin}>
   <div class={`guardia-card ${owned ? "owned" : ""}`}>
     <p><strong>Día:</strong> {getDate(new Date(guardia.inicio))}</p>
     <p>
@@ -26,50 +30,48 @@ function formatTime(date) {
     </p>
     <p><strong>Tipo:</strong> {guardia.tipo}</p>
     <p><strong>Aula:</strong> {guardia.id_aula}</p>
+
+    {admin && (
+      <div class="admin-buttons">
+       <button >
+          <img class="editButton" src="/edit.png" style="height: 20px;"/>
+       </button>
+       <button>
+        <img class="deleteButton" src="/trash.png" style="height: 20px"/>
+       </button>
+      </div>
+    )}
   </div>
 
   <!-- Modal para confirmar la guardia (si no es propia) -->
   <div class="modal confirm-modal">
     <div class="modal-content">
-      <h3>Confirmar Guardia</h3>
-      <p>¿Confirmas que realizarás esta guardia?</p>
-      <p><strong>Día:</strong> {getDate(new Date(guardia.inicio))}</p>
-      <p>
-        <strong>Horario:</strong>
-        {formatTime(new Date(guardia.inicio))} - {formatTime(new Date(guardia.fin))}
-      </p>
-      <p>
-        <strong>Observaciones:</strong>
-        {guardia.observaciones === "" ? "N/A" : guardia.observaciones}
-      </p>
-      <div class="modal-buttons">
-        <button class="confirm-button">Confirmar</button>
-        <button class="close-modal">Cancelar</button>
+      <div class="normal-section">
+        <h3>Confirmar Guardia</h3>
+        <p>¿Confirmas que realizarás esta guardia?</p>
+        <p><strong>Día:</strong> {getDate(new Date(guardia.inicio))}</p>
+        <p>
+          <strong>Horario:</strong>
+          {formatTime(new Date(guardia.inicio))} - {formatTime(new Date(guardia.fin))}
+        </p>
+        <p>
+          <strong>Observaciones:</strong>
+          {guardia.observaciones === "" ? "N/A" : guardia.observaciones}
+        </p>
+
+        <div class="modal-buttons">
+          <button class="confirm-button">Confirmar</button>
+          <button class="close-modal">Cancelar</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Modal Opcional, de momento no implementado -->
-  <div class="modal cancel-modal">
-    <div class="modal-content">
-      <h3>Información de la guardia</h3>
-      <p>¿Seguro que quieres cancelar esta guardia?</p>
-      <p><strong>Día:</strong> {getDate(new Date(guardia.inicio))}</p>
-      <p>
-        <strong>Horario:</strong>
-        {formatTime(new Date(guardia.inicio))} - {formatTime(new Date(guardia.fin))}
-      </p>
-      <p><strong>Tipo:</strong> {guardia.tipo}</p>
-      <div class="modal-buttons">
-        <button class="cancel-button">Cancelar Guardia</button>
-        <button class="close-modal">Cerrar</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <style>
   .guardia-card {
+    z-index: 3;
     border: 2px solid #4a90e2;
     padding: 1rem;
     border-radius: 8px;
@@ -116,6 +118,20 @@ function formatTime(date) {
     gap: 1rem;
     justify-content: flex-end;
   }
+
+  .admin-buttons {
+    z-index: 4;
+    gap: 14px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+
+    button {
+      border: 0px;
+    }
+  }
+
   .confirm-button, .cancel-button, .close-modal {
     padding: 0.5rem 1rem;
     border: none;
@@ -146,7 +162,7 @@ function formatTime(date) {
   }
 </style>
 
-<script is:inline type="module">
+<script is:inline>
   document.querySelectorAll('.guardia-container').forEach(container => {
     if (container.dataset.initialized) return;
     container.dataset.initialized = "true";
@@ -155,10 +171,12 @@ function formatTime(date) {
     const owned = container.dataset.owned === "true";
 
     const card = container.querySelector(".guardia-card");
+    const editButton = container.querySelector(".editButton");
+    const deleteButton = container.querySelector(".deleteButton");
+
     const confirmModal = container.querySelector(".confirm-modal");
-    const cancelModal = container.querySelector(".cancel-modal");
+    
     const confirmButton = container.querySelector(".confirm-button");
-    const cancelButton = container.querySelector(".cancel-button");
     const closeButtons = container.querySelectorAll(".close-modal");
 
     card.addEventListener("click", () => {
@@ -181,6 +199,15 @@ function formatTime(date) {
       });
     }
 
+    deleteButton.addEventListener("click", async function(e) {
+      e.stopPropagation();
+      deleteGuardia(guardiaObj, container); // Pasa los parámetros necesarios
+    });
+
+    editButton.addEventListener("click", async () => {
+
+    });
+
     /*if (cancelButton) {
       cancelButton.addEventListener("click", async () => {
         await removeAsignacionGuardia(guardiaObj);
@@ -188,6 +215,32 @@ function formatTime(date) {
       });
     }*/
   });
+
+
+  async function deleteGuardia(guardiaObj, container) {
+    const confirmed = confirm("¿Eliminar guardia?");
+    if (confirmed) {
+        container.remove();
+        try {
+            const response = await fetch('/api/delete-guardia', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: guardiaObj.id }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert('Aula eliminada correctamente');
+                //location.reload(); // 🔄 Recargar la página para reflejar los cambios
+            } else {
+                alert(`Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Error eliminando el aula:', error);
+            alert('Hubo un problema al eliminar el aula.');
+        }
+    }
+  }
 
   async function addAsignacionGuardia(guardia) {
     const userData = await fetch("/api/auth/get-user");
@@ -208,15 +261,4 @@ function formatTime(date) {
     }
   }
 
-  async function removeAsignacionGuardia(guardia) {
-    try {
-      const response = await fetch(`/api/remove-asignacion-guardia/${guardia.id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error(`Error: ${response.status}`);
-      window.location.reload();
-    } catch (error) {
-      console.error("Error en la petición:", error);
-    }
-  }
 </script>
