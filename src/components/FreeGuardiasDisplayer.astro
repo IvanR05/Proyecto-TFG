@@ -59,7 +59,7 @@ const { data: horarios } = await supabase
   .select("id, dia_semana, inicio, fin, turno")
   .eq("id_profesor", user.id);
 
-  console.log(filteredGuardias)
+  
 // Mapeo de nombres de días a números para comparación
 const diasSemana = {
   "Domingo": 0,
