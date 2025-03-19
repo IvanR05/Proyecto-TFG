@@ -1,17 +1,37 @@
 ---
-import NavBar from "../components/NavBar.astro";
 import AppLayout from "../layouts/AppLayout.astro";
+import { supabase } from "../lib/supabase.js";
+
+// Obtener sesión actual
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) throw new Error("User is not logged in");
+
+// Obtener usuario de la base de datos
+const { data: user, error } = await supabase
+  .from("usuarios")
+  .select("tipo")
+  .eq("auth_id", session.user.id)
+  .single();
+
+if (error) throw error;
+
+// Verificar si el usuario es administrador
+const esAdmin = user?.tipo;
 ---
 
 <AppLayout>
-  <h1>Informacion personal</h1>
+  <h1>Información personal</h1>
   <button class="full-width-button" id="cambiar-email">Cambiar correo</button>
   <button class="full-width-button" id="cambiar-contrasena">Cambiar contraseña</button>
-  <button class="full-width-button" onclick="window.location.href='/api/auth/logout'">Cerrar sesion</button>
+  <button class="full-width-button" onclick="window.location.href='/api/auth/logout'">Cerrar sesión</button>
 
-  <h1>Administrador</h1>
-  <button class="full-width-button" onclick="window.location.href='/ViewUsers'">Gestionar usuarios</button>
-  <button class="full-width-button" onclick="window.location.href='/GestionAulas'">Gestionar aulas</button>
+  {esAdmin && (
+    <>
+      <h1>Administrador</h1>
+      <button class="full-width-button" onclick="window.location.href='/ViewUsers'">Gestionar usuarios</button>
+      <button class="full-width-button" onclick="window.location.href='/GestionAulas'">Gestionar aulas</button>
+    </>
+  )}
 </AppLayout>
 
 <script>
@@ -110,10 +130,9 @@ import AppLayout from "../layouts/AppLayout.astro";
       border: none; /* Sin borde */
       border-radius: 8px; /* Bordes redondeados */
       font-size: 16px; /* Tamaño del texto */
-      text-align: left; /* Alinea el texto a la izquierda */
-      display: flex; /* Utiliza flexbox para alinear el contenido */
+      display: flex;
       justify-content: space-between; /* Alinea el contenido de manera que el texto esté a la izquierda y la flecha a la derecha */
-      align-items: center; /* Centra verticalmente el texto */
+      align-items: center;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       cursor: pointer; /* Muestra un cursor pointer cuando se pasa sobre el botón */
       transition: background-color 0.3s; /* Efecto suave al pasar el cursor */
@@ -121,7 +140,7 @@ import AppLayout from "../layouts/AppLayout.astro";
 
     /* Flecha triangular apuntando a la derecha */
     .full-width-button::after {
-      content: ''; /* El contenido del pseudo-elemento es vacío */
+      content: ''; /* El contenido del elemento esta vacío */
       width: 0; /* Sin ancho */
       height: 0; /* Sin altura */
       border-top: 6px solid transparent; /* Crea la parte superior de la flecha */
@@ -131,7 +150,7 @@ import AppLayout from "../layouts/AppLayout.astro";
     }
 
     .full-width-button:hover {
-      background-color: rgb(240, 240, 240); /* Cambia el fondo a color primario cuando pasa el ratón */
+      background-color: rgb(240, 240, 240); /* Cambia el fondo cuando pasa el ratón */
     }
     
     body {
@@ -143,13 +162,6 @@ import AppLayout from "../layouts/AppLayout.astro";
       align-items: flex-start;
       min-height: 100vh;
       font-family: 'Merriweather', serif;
-    }
-    
-    .container {
-      width: 100%;
-      max-width: 380px;
-      padding: 16px;
-      box-sizing: border-box;
     }
     
     h1 {

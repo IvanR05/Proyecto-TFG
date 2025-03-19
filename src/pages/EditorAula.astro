@@ -27,6 +27,7 @@ const editando = queryParams.get('editando');
     <div class="buttons">
       <button class="aceptar" onclick={`setTimeout(() => handleSubmit(), 0)`}>Aceptar</button>
       <button class="cancelar" onclick="window.location.href='/GestionAulas'">Cancelar</button>
+      <br><br><br><br><br><br><br><br>
     </div>
   </div>
 </AppLayout>
@@ -105,7 +106,7 @@ const editando = queryParams.get('editando');
     .content {
         display: flex;
         flex-direction: column;
-        height: 100%;
+        min-height: 100vh;
         justify-content: space-between;
     }
 
@@ -137,18 +138,9 @@ const editando = queryParams.get('editando');
         font-size: 16px;
         border: none;
         border-radius: 4px;
+        color: white;
         background-color: var(--color-secundario);
         cursor: pointer;
-    }
-
-    .cancelar {
-        background-color: #f44336; /* Rojo */
-        color: white;
-    }
-
-    .aceptar {
-        background-color: #4caf50; /* Verde */
-        color: white;
     }
 
     .buttons button:hover {
