@@ -3,6 +3,10 @@ import { supabase } from "../lib/supabase";
 
 const { guardia, user } = Astro.props;
 
+const todayDate = new Date();
+const todayLocal = new Date(todayDate.getTime() - todayDate.getTimezoneOffset() * 60000) // Ajusta a la zona horaria local
+  .toISOString()
+  .split("T")[0]; // Extrae YYYY-MM-DD basado en la zona horaria local
 const isPatio = guardia.tipo === "recreo";
 let activada = false;
 let estaAsignada = false;
@@ -24,10 +28,23 @@ const { data: asignaciones, error } = await supabase
 if (asignaciones == null) return;
 estaAsignada = asignaciones.length > 0;
 
-// Obtener los horarios de los profesores
+const fecha = new Date(todayLocal);
+const diasSemana = [
+  "Domingo", 
+  "Lunes", 
+  "Martes", 
+  "Miércoles", 
+  "Jueves", 
+  "Viernes", 
+  "Sábado"
+];
+const diaSemana = diasSemana[fecha.getDay()];
+
+// Obtener los horarios de los profesores para el día de la semana de hoy
 const { data: horariosProfesores, error: turnoError } = await supabase
     .from("horarios_profesor")
-    .select("inicio, id_profesor");
+    .select("inicio, id_profesor")
+    .eq("dia_semana", diaSemana)
 
 if (turnoError) throw turnoError;
 
@@ -57,10 +74,9 @@ const nombresProfesoresDisponibles = profesoresDisponibles.map((p) => p.nombre);
 
 if (nombresProfesoresDisponibles.includes(user.nombre)) {
     activada = true;
-}
+} else activada = false;
 
-
-console.log(nombresProfesoresDisponibles)
+// Si no está activada quiere decir que el usuario no puede apuntarse a esa guardia.
 
 // TODO
 // [X] Mostrar vacio si no hay nada en el tramo horario
@@ -88,17 +104,17 @@ console.log(nombresProfesoresDisponibles)
     <div class="modal-contenido">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h3>Profesores disponibles</h3>
-            <span class="cerrar" onclick={`cerrarModal('modal-${guardia.id}')`}>&times;</span>
+            <span class="cerrar" onclick={`cerrarModal('modal-${guardia.id}')`}
+                >&times;
+            </span>
         </div>
-        <div>
+        <div class="profes-dispo">
             {
-                profesoresDisponibles.map((p) => (
-                    <button>
-                        {p.nombre}
-                    </button>
-                    
-                ))
-                
+                profesoresDisponibles
+                    .filter((p) => p.nombre !== user.nombre)
+                    .map((p) => (
+                        <button>{p.nombre}</button>
+                    ))
             }
         </div>
         {activada && <button onclick="asignarmeGuardia()">Asignarme</button>}
@@ -152,11 +168,20 @@ console.log(nombresProfesoresDisponibles)
         z-index: 10;
         background: rgba(0, 0, 0, 0.5);
 
-
         button {
             width: 100%;
             height: 50px;
         }
+    }
+
+    
+
+    .profes-dispo {
+        display: flex;
+        flex-direction: column;
+        max-height: 300px; /* Adjust as needed */
+        overflow-y: auto;
+        gap: 8px; 
     }
 
     .modal.oculto {

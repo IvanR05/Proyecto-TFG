@@ -3,6 +3,22 @@ import { Guardia } from '../utils/guardia.js';
 import { supabase } from "../lib/supabase.js";
 import GuardiaCard from './GuardiaCard.astro';
 
+// Get current session
+const {
+  data: { session },
+} = await supabase.auth.getSession();
+if (!session) throw new Error("User is not logged in");
+
+// Fetch the user record from 'usuarios' using .single()
+const { data: user, error: userError } = await supabase
+  .from("usuarios")
+  .select("*")
+  .eq("auth_id", session.user.id)
+  .single();
+if (userError) throw userError;
+
+
+const isAdmin = user.tipo == "admin";
 // Fetch guardias data from Supabase
 const { data: guardiasData, error: guardiasError } = await supabase
   .from('guardias')
@@ -37,20 +53,57 @@ const asignacionesIds = asignacionesData?.map((asignacion) => asignacion.id_guar
 // Filter the guardias array to only include those not in asignaciones_guardia
 const filteredGuardias = guardias?.filter((guardia) => !asignacionesIds?.includes(guardia.id));
 
-// Aun falta filtrar por horario
+// Obtener horarios del profesor
+const { data: horarios } = await supabase
+  .from("horarios_profesor")
+  .select("id, dia_semana, inicio, fin, turno")
+  .eq("id_profesor", user.id);
+
+  
+// Mapeo de nombres de días a números para comparación
+const diasSemana = {
+  "Domingo": 0,
+  "Lunes": 1,
+  "Martes": 2,
+  "Miércoles": 3,
+  "Jueves": 4,
+  "Viernes": 5,
+  "Sábado": 6
+};
+
+// Filtrar guardias que coincidan con el horario del profesor
+const guardiasDisponibles = filteredGuardias?.filter(guardia => {
+  const diaGuardia = new Date(guardia.inicio).getDay(); // Obtener el día de la semana (0=Domingo, 1=Lunes...)
+  
+  const horaInicioGuardia = new Date(`1970-01-01T${guardia.inicio.split('T')[1]}`);
+  const horaFinGuardia = new Date(`1970-01-01T${guardia.fin.split('T')[1]}`);
+  
+
+  return horarios?.some(horario => {
+    const diaHorario = diasSemana[horario.dia_semana];
+    const horaInicioHorario = new Date(`1970-01-01T${horario.inicio}`);
+    const horaFinHorario = new Date(`1970-01-01T${horario.fin}`);
+
+    return diaGuardia === diaHorario && 
+           horaInicioGuardia >= horaInicioHorario && 
+           horaFinGuardia <= horaFinHorario;
+  });
+});
+
+
+// [X] Para cada guardia en filteredGuardias, comprobar día y fecha de la guardia y ver si está admitido en el horario
+
 ---
 
-<!-- Add viewport meta in your layout if not already present -->
-<!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
-
-<div class="">
-  
+<div>
   <div class="guardias-container">
-    {
-      filteredGuardias?.map((guardia) => (
-        <GuardiaCard guardia={guardia} owned={false} />
+    {guardiasDisponibles?.length > 0 ? (
+      guardiasDisponibles?.map((guardia) => (
+        <GuardiaCard guardia={guardia} owned={false} isAdmin={isAdmin}/>
       ))
-    }
+    ) : (
+      <div>Ninguna</div>
+    )}
   </div>
 </div>
 
