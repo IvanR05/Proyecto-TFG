@@ -1,5 +1,5 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import AppLayout from "../layouts/AppLayout.astro";
 import { supabase } from "../lib/supabase.js";
 
 const { data: usuarios, error } = await supabase
@@ -14,7 +14,7 @@ const { data: usuarios, error } = await supabase
   .order('created_at', { ascending: true });
 ---
 
-<Layout title="Gestión de Usuarios">
+<AppLayout title="Gestión de Usuarios">
     <main class="container">
         <h1>Usuarios Pendientes de Aprobación</h1>
         <h3>(Al rechazar los usuarios no se borrarán de la base de datos pero no tendrán acceso a la aplicación)</h3>
@@ -211,4 +211,4 @@ const { data: usuarios, error } = await supabase
             font-weight: bold;
         }
     </style>
-</Layout>
+</AppLayout>
