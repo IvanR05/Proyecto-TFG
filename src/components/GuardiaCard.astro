@@ -43,6 +43,7 @@ function formatTime(date) {
     )}
   </div>
 
+  <!-- TO DELETE -->
   <!-- Modal para confirmar la guardia (si no es propia) -->
   <div class="modal confirm-modal">
     <div class="modal-content">
@@ -179,12 +180,17 @@ function formatTime(date) {
     const confirmButton = container.querySelector(".confirm-button");
     const closeButtons = container.querySelectorAll(".close-modal");
 
-    card.addEventListener("click", () => {
-      if (owned) {
-        //cancelModal.classList.add("show");
-      } else {
-        confirmModal.classList.add("show");
-      }
+    card.addEventListener("click", async function(e) {
+      console.log("yes")
+      const infoEvent = new CustomEvent('open-info-modal', {
+        detail: {
+          guardia: guardiaObj,
+          isMini: false,
+        },
+        bubbles: true
+      });
+      this.dispatchEvent(infoEvent);
+      
     });
 
     closeButtons.forEach(button => button.addEventListener("click", () => {
@@ -206,6 +212,7 @@ function formatTime(date) {
 
     editButton.addEventListener("click", async function(e) {
       // Dispara un evento personalizado con los datos de la guardia
+      e.stopPropagation();
       const editEvent = new CustomEvent('open-edit-modal', {
         detail: guardiaObj,
         bubbles: true

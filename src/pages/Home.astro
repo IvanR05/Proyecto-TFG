@@ -57,11 +57,34 @@ const { data: aulasData, error: aulasError } = await supabase
   <br /><br /><br /><br /><br /><br />
   <!--Deja espacio para la NavBar -->
 
+  <div id="info-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-section">
+        <h3 class="modal-title">Detalles de Guardia</h3>
+        <div class="modal-body">
+          <p><strong>Fecha:</strong> <span id="info-fecha"></span></p>
+          <p><strong>Hora:</strong> <span id="info-hora"></span></p>
+          <p><strong>Aula:</strong> <span id="info-aula"></span></p>
+          <p><strong>Tipo:</strong> <span id="info-tipo"></span></p>
+          <p>
+            <strong>Observaciones:</strong>
+            <span id="info-observaciones"></span>
+          </p>
+        </div>
+
+        <div class="modal-buttons">
+          <button type="button" class="close-modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
   <div id="edit-modal" class="modal">
     <div class="modal-content">
-      <div class="normal-section">
-        <h3>Editar Guardia</h3>
-        <form id="edit-guardia-form">
+      <div class="modal-section">
+        <h3 class="modal-title">Editar Guardia</h3>
+        <form id="edit-guardia-form" class="modal-form">
           <input type="hidden" id="edit-guardia-id" />
 
           <!-- Nuevo campo para la fecha -->
@@ -86,7 +109,7 @@ const { data: aulasData, error: aulasError } = await supabase
           <!-- Campos restantes -->
           <label>Tipo:</label>
           <select id="edit-tipo" required>
-            <option value="Recreo">Recreo</option> <!-- (20/03 3:35) He cambiado la primera en mayuscula, espero que no rompa nada -->
+            <option value="Recreo">Recreo</option>
             <option value="Clase">Clase</option>
           </select>
 
@@ -119,13 +142,47 @@ const { data: aulasData, error: aulasError } = await supabase
 </AppLayout>
 
 <script is:inline>
-  /* Info modal */
+  // Info Modal Handling
+  document.addEventListener("open-info-modal", (e) => {
+    const guardia = e.detail.guardia;
+    console.log(guardia)
+    const isMini = e.detail.isMini;
+    let isActivada;
+    if(isMini) {
+      isActivada = e.detail.isActivada;
+    }
+    const modal = document.getElementById("info-modal");
 
+    // Formatear fechas
+    const fechaOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    const horaOptions = { hour: "2-digit", minute: "2-digit" };
+
+    // Establecer valores
+    document.getElementById("info-fecha").textContent = new Date(
+      guardia.inicio,
+    ).toLocaleDateString("es-ES", fechaOptions);
+
+    document.getElementById("info-hora").textContent =
+      `${new Date(guardia.inicio).toLocaleTimeString("es-ES", horaOptions)} - 
+      ${new Date(guardia.fin).toLocaleTimeString("es-ES", horaOptions)}`;
+
+    document.getElementById("info-aula").textContent = guardia.id_aula;
+    document.getElementById("info-tipo").textContent = guardia.tipo;
+    document.getElementById("info-observaciones").textContent =
+      guardia.observaciones || "Ninguna";
+
+    modal.classList.add("show");
+  });
 
   /* Edit modal */
   document.addEventListener("open-edit-modal", (e) => {
     e.stopPropagation();
-    
+
     const guardia = e.detail;
     const modal = document.getElementById("edit-modal");
 
@@ -172,62 +229,61 @@ const { data: aulasData, error: aulasError } = await supabase
   });
 
   // Submit handler actualizado
-  document.getElementById("edit-guardia-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    
-    try {
-      // Validar campos
-      const fecha = document.getElementById("edit-fecha").value;
-      const tramo = JSON.parse(document.getElementById("edit-tramo").value);
-      const aulaSelect = document.getElementById("edit-aula");
-      
-      if (!fecha || !tramo || !aulaSelect.value) {
-        alert("Por favor completa todos los campos requeridos");
-        return;
+  document
+    .getElementById("edit-guardia-form")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      try {
+        // Validar campos
+        const fecha = document.getElementById("edit-fecha").value;
+        const tramo = JSON.parse(document.getElementById("edit-tramo").value);
+        const aulaSelect = document.getElementById("edit-aula");
+
+        if (!fecha || !tramo || !aulaSelect.value) {
+          alert("Por favor completa todos los campos requeridos");
+          return;
+        }
+
+        // Parsear aula
+        const selectedAula = JSON.parse(aulaSelect.value);
+
+        const updatedGuardia = {
+          id: document.getElementById("edit-guardia-id").value,
+          inicio: new Date(`${fecha}T${tramo.start}`).toISOString(),
+          fin: new Date(`${fecha}T${tramo.end}`).toISOString(),
+          tipo: document.getElementById("edit-tipo").value,
+          id_aula: selectedAula.id_aula,
+          observaciones: document.getElementById("edit-observaciones").value,
+        };
+
+        const response = await fetch("/api/update-guardia", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedGuardia),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Error: ${response.status}`);
+        }
+
+        closeEditModal();
+        location.reload();
+      } catch (error) {
+        console.error("Error actualizando guardia:", error);
+        alert(error.message || "Error al actualizar la guardia");
       }
+    });
 
-      // Parsear aula
-      const selectedAula = JSON.parse(aulaSelect.value);
-      
-      const updatedGuardia = {
-        id: document.getElementById("edit-guardia-id").value,
-        inicio: new Date(`${fecha}T${tramo.start}`).toISOString(),
-        fin: new Date(`${fecha}T${tramo.end}`).toISOString(),
-        tipo: document.getElementById("edit-tipo").value,
-        id_aula: selectedAula.id_aula,
-        observaciones: document.getElementById("edit-observaciones").value,
-      };
-
-      const response = await fetch("/api/update-guardia", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedGuardia),
+    // Close both modals with same class
+    document.querySelectorAll(".close-modal").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".modal").forEach(modal => {
+          modal.classList.remove("show");
+        });
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error: ${response.status}`);
-      }
-      
-      closeEditModal();
-      location.reload();
-
-    } catch (error) {
-      console.error("Error actualizando guardia:", error);
-      alert(error.message || "Error al actualizar la guardia");
-    }
-  });
-
-  function closeEditModal() {
-    const modal = document.getElementById("edit-modal");
-    modal.classList.remove("show");
-    document.body.classList.remove("modal-open");
-  }
-
-  document.getElementById("close-edit-modal").addEventListener("click", async function(e) {
-    e.stopPropagation();
-    closeEditModal();
-  })
+    });
 </script>
 
 <style>
@@ -235,26 +291,7 @@ const { data: aulasData, error: aulasError } = await supabase
     background-color: rgb(226, 251, 255);
   }
 
-  /* Estilos para el modal de edición */
-  #edit-modal .modal-content {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    position: relative;
-    /* Centrado vertical y horizontal */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  .normal-section {
-    padding: 10px;
-  }
-
-  #edit-modal {
+  .modal {
     display: none;
     position: fixed;
     top: 0;
@@ -265,43 +302,104 @@ const { data: aulasData, error: aulasError } = await supabase
     z-index: 1000;
   }
 
-  #edit-modal.show {
-    display: block; /* Cambiado de flex a block para el transform */
+  .modal.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
-  #edit-guardia-form {
+  .modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .modal-section {
+    padding: 10px;
+  }
+
+  .modal-title {
+    margin-bottom: 1.5rem;
+    color: #1a237e;
+  }
+
+  .modal-buttons {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+  }
+
+  /* Shared Form Styles */
+  .modal-form {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  #edit-guardia-form label {
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
     font-weight: bold;
+    color: #333;
   }
 
-  #edit-guardia-form input,
-  #edit-guardia-form select,
-  #edit-guardia-form textarea {
-    padding: 0.5rem;
+  .form-input,
+  .form-select,
+  .form-textarea {
+    width: 100%;
+    padding: 0.75rem;
     border: 1px solid #ddd;
     border-radius: 4px;
-    width: 100%;
+    font-size: 1rem;
   }
 
-  /* Añade estos estilos */
-  #edit-tramo {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 1rem;
+  .form-textarea {
+    min-height: 100px;
+    resize: vertical;
   }
 
-  #edit-fecha {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
+  /* Info Modal Specific Styles */
+  #info-modal .modal-content {
+    max-width: 600px;
+  }
+
+  #info-content {
+    line-height: 1.6;
+  }
+
+  /* Edit Modal Specific Styles */
+  #edit-modal .form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,...");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 0.65em auto;
+  }
+
+  /* Shared Button Styles */
+  .confirm-button {
+    background-color: #2196f3;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
     border-radius: 4px;
-    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+
+  .close-modal {
+    background-color: #f44336;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
   }
 </style>
