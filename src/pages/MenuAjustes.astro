@@ -16,7 +16,7 @@ const { data: user, error } = await supabase
 if (error) throw error;
 
 // Verificar si el usuario es administrador
-const esAdmin = user?.tipo;
+const esAdmin = user?.tipo == "admin";
 ---
 
 <AppLayout>
