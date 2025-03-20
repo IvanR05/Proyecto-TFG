@@ -92,6 +92,7 @@ if (nombresProfesoresDisponibles.includes(user.nombre)) {
 <div 
   class={`miniguardia ${estaAsignada ? "asignada" : "sin-asignar"} ${activada ? "activada" : "sin-activar"}`}
   data-guardia={JSON.stringify(guardia)}
+  data-profesores-disponibles={JSON.stringify(nombresProfesoresDisponibles)}
 >
     <div class="estado">
         <strong>{estaAsignada ? "ASIGNADA" : "SIN ASIGNAR"}</strong>
@@ -195,7 +196,8 @@ if (nombresProfesoresDisponibles.includes(user.nombre)) {
     
     // Guardar datos en el dataset
     const guardiaData = JSON.parse(element.dataset.guardia);
-    
+    const nombresProfesoresDisponiblesData = JSON.parse(element.dataset.profesoresDisponibles);
+
     element.addEventListener('click', async function(e) {
       e.stopPropagation();
       const infoEvent = new CustomEvent('open-info-modal', {
@@ -204,6 +206,7 @@ if (nombresProfesoresDisponibles.includes(user.nombre)) {
           isMini: true,
           isActivada: element.classList.contains('activada'),
           isAsignada: element.classList.contains('asignada'),
+          profesDispo: nombresProfesoresDisponiblesData,
         },
         bubbles: true,
       });

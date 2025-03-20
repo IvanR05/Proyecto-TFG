@@ -62,6 +62,7 @@ const { data: aulasData, error: aulasError } = await supabase
       <div class="modal-section">
         <h3 class="modal-title">Detalles de Guardia</h3>
         <div class="modal-body">
+          <p id="profesdispo"><strong>Profes disponibles:</strong> <span id="info-profes-dispo"></span></p> 
           <p><strong>Fecha:</strong> <span id="info-fecha"></span></p>
           <p><strong>Hora:</strong> <span id="info-hora"></span></p>
           <p><strong>Aula:</strong> <span id="info-aula"></span></p>
@@ -158,11 +159,13 @@ const { data: aulasData, error: aulasError } = await supabase
     const isMini = e.detail.isMini;
     const isOwned = e.detail.isOwned;
     
+    let profesDispo;
     let isActivada;
     let isAsignada;
     if(isMini) {
       isActivada = e.detail.isActivada;
       isAsignada = e.detail.isAsignada;
+      profesDispo = e.detail.profesDispo;
     }
     const modal = document.getElementById("info-modal");
 
@@ -218,6 +221,7 @@ const { data: aulasData, error: aulasError } = await supabase
     
 
     if(isMini){
+      document.getElementById("profesdispo").classList.remove("hide-this");
       document.getElementById("info-ausencias").classList.remove("hide-this");
       document.getElementById("info-ausencias-edit").classList.add("hide-this");
       
@@ -228,6 +232,7 @@ const { data: aulasData, error: aulasError } = await supabase
       } 
     }
     if(!isMini){
+      document.getElementById("profesdispo").classList.add("hide-this");
       if(isOwned){
         document.getElementById("asignarb").classList.add("hide-this");
         document.getElementById("info-ausencias-edit").classList.remove("hide-this");
@@ -267,6 +272,7 @@ const { data: aulasData, error: aulasError } = await supabase
       document.getElementById("info-ausencias").textContent =
       guardia.ausencias || "Ninguna";
     document.getElementById("info-ausencias-edit").textContent = guardia.ausencias;
+    document.getElementById("info-profes-dispo").textContent = (!profesDispo || profesDispo.length == 0) ? "Ninguno" : profesDispo.join(", ");
 
     modal.classList.add("show");
   });
