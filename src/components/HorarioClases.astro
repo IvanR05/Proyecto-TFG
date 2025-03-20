@@ -38,7 +38,9 @@ if (!turnoActual) {
 }
 
 const todayDate = new Date();
-const todayLocal = new Date(todayDate.getTime() - todayDate.getTimezoneOffset() * 60000) // Ajusta a la zona horaria local
+const todayLocal = new Date(
+  todayDate.getTime() - todayDate.getTimezoneOffset() * 60000,
+) // Ajusta a la zona horaria local
   .toISOString()
   .split("T")[0]; // Extrae YYYY-MM-DD basado en la zona horaria local
 
@@ -91,6 +93,17 @@ guardiasHoy.forEach((guardia) => {
 const { data: aulasData, error: aulasError } = await supabase
   .from("aulas")
   .select("*");
+
+let usersData = [];
+if (user.tipo === "admin") {
+  const { data: users, error: usersError } = await supabase
+    .from("usuarios")
+    .select("id, nombre");
+  if (usersError) throw usersError;
+
+  // @ts-ignore
+  usersData = users;
+}
 ---
 
 <div class="guardias-table">
@@ -136,14 +149,17 @@ const { data: aulasData, error: aulasError } = await supabase
       <div class="normal-section">
         <h3>Generar guardia para tramo de:</h3>
         <form id="create-guardia-form">
-          <input type="hidden" id="create-profe-id" value={user.id} />
+          <!-- Conditional Profesor Field -->
           <input type="hidden" id="create-fecha" value={todayLocal} />
           <input type="hidden" id="create-inicio" />
           <input type="hidden" id="create-fin" />
-          
+
           <label id="form-tramo"></label>
 
           <div class="form-separator">
+            <!-- Hidden input for non-admins -->
+            {user.tipo !== "admin" && <input type="hidden" id="create-profe-id" value={user.id} />}
+            
             <label>Aula:</label>
             <select id="create-aula" required>
               <option value="">Selecciona un aula</option>
@@ -153,17 +169,34 @@ const { data: aulasData, error: aulasError } = await supabase
                 ))
               }
             </select>
-  
+
             <label>Tipo:</label>
             <select id="create-tipo" required>
               <option value="Recreo">Recreo</option>
               <option value="Clase">Clase</option>
             </select>
-  
+
+            <!-- Professor dropdown for admins (hidden by default) -->
+            {user.tipo === "admin" && (
+              <div id="profe-container" class="hidden">
+                <label>Profesor a sustituir:</label>
+                <select id="create-profe-id" required>
+                  <option value="">Selecciona un profesor</option>
+                  <option value={user.id}> - Tú - </option>
+                  {
+                    // @ts-ignore
+                    usersData.filter((u) => u.id !== user.id)
+                    .map((u) => (
+                      // @ts-ignore
+                      <option value={u.id}>{u.nombre}</option>
+                    ))}
+                </select>
+              </div>
+            )}
+
             <label>Observaciones:</label>
             <textarea id="create-observaciones"></textarea>
           </div>
-          
 
           <div class="modal-buttons">
             <button type="submit" class="confirm-button">Crear Guardia</button>
@@ -176,8 +209,7 @@ const { data: aulasData, error: aulasError } = await supabase
 </div>
 <div class="generate-g" id="generateButton">
   <span class="original-text">GENERAR GUARDIA</span>
-  <span class="selection-mode-text"
-    >Manten pulsada la franja horaria deseada</span
+  <span class="selection-mode-text">Haz click en la franja horaria deseada</span
   >
 </div>
 
@@ -226,12 +258,12 @@ const { data: aulasData, error: aulasError } = await supabase
     exitSelectionMode();
   };
 
-
   function showCreateModal(th) {
     const [start, end] = th.textContent.split("-");
     const modal = document.getElementById("create-modal");
 
-    document.getElementById("form-tramo").innerHTML = start.trim() + " - " + end.trim();
+    document.getElementById("form-tramo").innerHTML =
+      start.trim() + " - " + end.trim();
     document.getElementById("create-inicio").value = start.trim();
     document.getElementById("create-fin").value = end.trim();
 
@@ -263,9 +295,9 @@ const { data: aulasData, error: aulasError } = await supabase
         tipo: document.getElementById("create-tipo").value,
         id_aula: document.getElementById("create-aula").value,
         observaciones: document.getElementById("create-observaciones").value,
-        /*id_profesor: id_profesor, // Asegúrate de inyectar el ID del usuario*/
+        profesor_ausente: id_profesor, // Asegúrate de inyectar el ID del usuario*/
       };
-      console.log(nuevaGuardia)
+      console.log(nuevaGuardia);
 
       try {
         const response = await fetch("/api/add-guardia", {
@@ -282,6 +314,28 @@ const { data: aulasData, error: aulasError } = await supabase
         alert(error.message);
       }
       exitSelectionMode();
+    });
+
+    // Add profesor dropdown visibility control
+    document.addEventListener('DOMContentLoaded', () => {
+      const tipoSelect = document.getElementById('create-tipo');
+      const profeContainer = document.getElementById('profe-container');
+      const profeSelect = document.getElementById('create-profe-id');
+
+      if (profeContainer && profeSelect) {
+        // Initial state
+        const updateProfeVisibility = () => {
+          const showProfe = tipoSelect.value === 'Clase';
+          profeContainer.classList.toggle('hidden', !showProfe);
+          profeSelect.required = showProfe;
+        };
+
+        // Update on change
+        tipoSelect.addEventListener('change', updateProfeVisibility);
+        
+        // Initial check
+        updateProfeVisibility();
+      }
     });
 </script>
 
@@ -339,36 +393,23 @@ const { data: aulasData, error: aulasError } = await supabase
   .guardias-table tbody td {
     border-right: 1px solid #ddd;
     vertical-align: top;
-    height: fit-content; /* Fixed height for all cells */
+    height: 342px; /* Fixed height for all cells */
   }
 
   /* Make time-column scrollable */
   .time-column {
     display: flex;
-    flex-grow: 1;
     flex-direction: column;
     height: 100%; /* Take full height of parent td */
-    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-y: scroll; /* Enable vertical scrolling */
     gap: 0.5rem;
   }
 
   .empty-slot {
     display: flex;
-    flex-grow: 1;
     align-items: center;
     justify-content: center;
     background-color: rgba(252, 196, 92, 0.877);
-    height: 100%; /* Fill parent height */
-    width: 100%; /* Full width */
-    padding: 10px; /* Move padding here from inner span */
-    box-sizing: border-box; /* Include padding in height calculation */
-  }
-
-  .empty-slot span {
-    display: block;
-    border-radius: 10px;
-    background-color: white;
-    padding: 10px;
   }
 
   .add-guardia {
@@ -414,7 +455,7 @@ const { data: aulasData, error: aulasError } = await supabase
   .guardias-table.selection-mode th {
     background-color: #abfff8 !important; /* Fondo verde claro */
     border: 1px solid;
-    
+
     /*border: 2px dashed !important;*/
     cursor: pointer;
   }
@@ -456,10 +497,12 @@ const { data: aulasData, error: aulasError } = await supabase
       gap: 10px;
     }
 
-    select, textarea {
+    
+
+    select,
+    textarea {
       font-size: 16px !important;
     }
-    
   }
 
   #form-tramo {
@@ -468,12 +511,22 @@ const { data: aulasData, error: aulasError } = await supabase
     width: 170px;
     text-align: center;
     font-size: 25px;
-    
+
     padding: 6px;
     border-radius: 8px;
     background-color: cyan;
 
     margin-bottom: 15px;
+  }
+
+  #profe-container:not(.hidden) {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+  .hidden {
+    display: none;
   }
 
   .modal-buttons {

@@ -10,11 +10,11 @@ export async function POST({ request }) {
         const body = JSON.parse(bodyText); // ⬅️ Intentar convertirlo en JSON
         console.log("Cuerpo parseado (JSON):", body);
 
-        const { tipo, inicio, fin, observaciones, ausencias, id_aula } = body;
+        const { tipo, inicio, fin, observaciones, ausencias, id_aula, profesor_ausente } = body;
 
         // 🔴 Validar que los campos importantes no sean nulos o vacíos
-        if (!tipo || !inicio || !fin || !id_aula) {
-            console.error("Error: Datos inválidos", { tipo, inicio, fin, id_aula });
+        if (!tipo || !inicio || !fin || !id_aula ) {
+            console.error("Error: Datos inválidos", { tipo, inicio, fin, id_aula});
             return new Response(JSON.stringify({ message: "Datos inválidos" }), {
                 status: 400,
                 headers: { "Content-Type": "application/json" }
@@ -22,9 +22,10 @@ export async function POST({ request }) {
         }
 
         // 🟢 Intentar insertar en Supabase
+        
         const { data, error } = await supabase
             .from('guardias')
-            .insert([{ tipo, inicio, fin, observaciones, ausencias, id_aula }]);
+            .insert([{ tipo, inicio, fin, observaciones, ausencias, id_aula, profesor_ausente}]);
 
         if (error) {
             console.error("Error en Supabase:", error);
