@@ -12,4 +12,5 @@ Para acceder a la documentación usa los siguientes enlaces:
 - [Manual de Usuario](https://google.com)
 
 
+## 👥 Integrantes del grupo
 _Jorge Alonso, Ivan Ruíz, Izan Morán_
