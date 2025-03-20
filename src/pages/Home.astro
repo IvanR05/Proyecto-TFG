@@ -159,8 +159,10 @@ const { data: aulasData, error: aulasError } = await supabase
     const isOwned = e.detail.isOwned;
     
     let isActivada;
+    let isAsignada;
     if(isMini) {
       isActivada = e.detail.isActivada;
+      isAsignada = e.detail.isAsignada;
     }
     const modal = document.getElementById("info-modal");
 
@@ -174,7 +176,12 @@ const { data: aulasData, error: aulasError } = await supabase
     cerrarButton.addEventListener('click', async (e) => {
         e.stopImmediatePropagation();
 
-        if(!isOwned) return;
+        console.log(isOwned);
+        
+        if(!isOwned){
+          location.reload();
+          return;
+        } 
 
         const nuevasAusencias = document.getElementById('info-ausencias-edit').value;
         
@@ -208,16 +215,31 @@ const { data: aulasData, error: aulasError } = await supabase
     // Si no viene de mini:
     // - Si está owned: poder editar las ausencias. (añadir boton de guardado etc)
 
-    if(isOwned){
-        document.getElementById("info-ausencias-edit").classList.remove("hide-this");
+    
+
+    if(isMini){
+      document.getElementById("info-ausencias").classList.remove("hide-this");
+      document.getElementById("info-ausencias-edit").classList.add("hide-this");
+      
+      if(!isAsignada && isActivada){ // Si no está cogida y está activa, mostramos boton
+        document.getElementById("asignarb").classList.remove("hide-this");
+      } else {
         document.getElementById("asignarb").classList.add("hide-this");
+      } 
+    }
+    if(!isMini){
+      if(isOwned){
+        document.getElementById("asignarb").classList.add("hide-this");
+        document.getElementById("info-ausencias-edit").classList.remove("hide-this");
         document.getElementById("info-ausencias").classList.add("hide-this");
-        
-    } else {
+      } else {
+        document.getElementById("asignarb").classList.remove("hide-this");
         document.getElementById("info-ausencias").classList.remove("hide-this");
         document.getElementById("info-ausencias-edit").classList.add("hide-this");
-        if(isActivada) document.getElementById("asignarb").classList.remove("hide-this");
+      }
     }
+
+    
 
 
     // Formatear fechas
