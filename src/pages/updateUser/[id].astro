@@ -61,12 +61,19 @@ const turnoActual =
   guardiasExistentes && guardiasExistentes.length > 0
     ? guardiasExistentes[0].turno
     : "diurno";
+
+
+declare global {
+  interface Window {
+    user?: { id: number; nombre: string; correo: number; tipo: string; auth_id: string }; // Ajusta según la estructura de tu usuario
+  }
+}
 ---
 
 <Layout page_title={`Editar Usuario - ${usuario.nombre || "Sin nombre"}`}>
   <script define:vars={{ guardiasData }}>
-    // Client-side
-    console.log("Guardias:", guardiasData); // Directly available
+    // Lado del cliente
+    console.log("Guardias:", guardiasData);
     window.preloadedGuardiasData = guardiasData;
   </script>
   <main class="edit-form-container">
@@ -153,7 +160,24 @@ const turnoActual =
       </div>
     </div>
   </main>
+  <script>
+    (async function () {
+      try {
+        const userData = await fetch("/api/auth/get-user");
+  
+        if (!userData.ok) {
+          throw new Error("Error al obtener los datos del usuario.");
+        }
+        
+  
+        window.user = await userData.json() || {};
+        console.log("usuario",window.user?.nombre);
 
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+  </script>
   <script is:inline>
     // Inicializar con datos precargados
     let selectedCells = window.preloadedGuardiasData || [];
@@ -170,7 +194,7 @@ const turnoActual =
 
     // Función para formatear la hora a "hh:mm - hh:mm"
     function formatHora(hora) {
-      // Verificar si la hora tiene el formato correcto (HH:mm:ss)
+      // Verificar si la hora tiene el formato correcto (HH:mm)
       if (!/^\d{2}:\d{2}/.test(hora)) {
         console.error("Formato de hora incorrecto:", hora);
         return "00:00"; // Devolver un valor por defecto si el formato es incorrecto
@@ -179,6 +203,7 @@ const turnoActual =
       return hora.slice(0, 5); // Extraer HH:mm de la hora
     }
 
+    //Función para cargar las horas del horario correspondiente
     async function loadHoras() {
       try {
         const response = await fetch("/src/assets/horario.json");
@@ -323,6 +348,7 @@ const turnoActual =
             fin: g.hora.split(" - ")[1],
             turno: g.turno,
           })),
+          nombreAdmin: window.user.nombre
         };
 
         try {

@@ -234,6 +234,24 @@
         selectedCells = []; // Limpiar la lista de celdas seleccionadas
       });
 
+      const userData = await fetch("/api/auth/get-user");
+
+      if (userData.ok) {
+        const user = await userData.json();
+        console.log(user);
+        // Verificar si el elemento con id 'userName' existe antes de modificar su contenido
+        const userNameElement = document.getElementById("nombre");
+        if (userNameElement) {
+          userNameElement.textContent = user.nombre;
+        } else {
+          console.error(
+            "El elemento con id 'userName' no se encontró en el DOM."
+          );
+        }
+      } else {
+        console.error("Error al obtener los datos del usuario.");
+      }
+
       // Función para generar una contraseña aleatoria
       function generateRandomPassword(length = 12) {
         const charset =
@@ -259,6 +277,13 @@
           "guardiasSeleccionadas",
           JSON.stringify(guardiasSeleccionadas)
         );
+        const userNameElement = document.getElementById("nombre");
+        if (userNameElement && userNameElement.textContent) {
+          formData.append("nombre2", userNameElement.textContent);
+          console.log(userNameElement.textContent);
+        } else {
+          console.error("No se encontró el nombre de usuario.");
+        }
 
         const response = await fetch("/api/auth/registerAdmin", {
           method: "POST",
@@ -336,7 +361,7 @@
 
       // Función para cargar las horas desde el archivo JSON
       async function loadHoras() {
-        const response = await fetch("/src/assets/horario.json"); // Asegúrate de que el archivo JSON esté en el mismo directorio o usa la ruta correcta
+        const response = await fetch("../src/assets/horario.json"); // Asegúrate de que el archivo JSON esté en el mismo directorio o usa la ruta correcta
         const horarios = await response.json();
         return horarios;
       }
@@ -408,7 +433,7 @@
             cell.style.backgroundColor = "white"; // Forzar fondo blanco
             cell.style.border = "2px solid #000"; // Asegurar el borde desde el inicio
 
-            // Verificar si la celda fue seleccionada previamente y restaurar el estado 
+            // Verificar si la celda fue seleccionada previamente y restaurar el estado
             const cellId = `${i}-${j}`;
             if (selectedCells.includes(cellId)) {
               cell.classList.add("selected");

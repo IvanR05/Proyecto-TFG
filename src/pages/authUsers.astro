@@ -3,212 +3,248 @@ import Layout from "../layouts/Layout.astro";
 import { supabase } from "../lib/supabase.js";
 
 const { data: usuarios, error } = await supabase
-  .from('usuarios')
-  .select(`
+  .from("usuarios")
+  .select(
+    `
     id,
     nombre,
     correo,
     created_at
-  `)
-  .eq('aceptado', false)
-  .order('created_at', { ascending: true });
+  `
+  )
+  .eq("aceptado", false)
+  .order("created_at", { ascending: true });
+  declare global {
+  interface Window {
+    user?: { id: number; nombre: string; correo: number; tipo: string; auth_id: string }; // Ajusta según la estructura de tu usuario
+  }
+}
+
 ---
 
 <Layout title="Gestión de Usuarios">
-    <main class="container">
-        <h1>Usuarios Pendientes de Aprobación</h1>
-        <h3>(Al rechazar los usuarios no se borrarán de la base de datos pero no tendrán acceso a la aplicación)</h3>
+  <main class="container">
+    <h1>Usuarios Pendientes de Aprobación</h1>
+    <h3>
+      (Al rechazar los usuarios no se borrarán de la base de datos pero no
+      tendrán acceso a la aplicación)
+    </h3>
+
+    {
+      error ? (
+        <div class="error">⚠️ Error cargando usuarios: {error.message}</div>
+      ) : (
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuarios.length === 0 ? (
+                <tr class="empty">
+                  <td colspan="3">🎉 Todos los usuarios están aprobados</td>
+                </tr>
+              ) : (
+                usuarios.map((usuario) => (
+                  <tr data-id={usuario.id}>
+                    <td>{usuario.nombre}</td>
+                    <td>{usuario.correo}</td>
+                    <td class="actions">
+                      <button class="btn accept" data-action="accept">
+                        ✅ Aceptar
+                      </button>
+                      <button class="btn reject" data-action="reject">
+                        ❌ Rechazar
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </main>
+  <script>
+    (async function () {
+      try {
+        const userData = await fetch("/api/auth/get-user");
+  
+        if (!userData.ok) {
+          throw new Error("Error al obtener los datos del usuario.");
+        }
         
-        {error ? (
-            <div class="error">⚠️ Error cargando usuarios: {error.message}</div>
-        ) : (
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Correo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {usuarios.length === 0 ? (
-                            <tr class="empty">
-                                <td colspan="3">🎉 Todos los usuarios están aprobados</td>
-                            </tr>
-                        ) : (
-                            usuarios.map(usuario => (
-                                <tr data-id={usuario.id}>
-                                    <td>{usuario.nombre}</td>
-                                    <td>{usuario.correo}</td>
-                                    <td class="actions">
-                                        <button class="btn accept" data-action="accept">✅ Aceptar</button>
-                                        <button class="btn reject" data-action="reject">❌ Rechazar</button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        )}
-    </main>
+  
+        window.user = await userData.json() || {};
+        console.log("usuario",window.user?.nombre);
 
-    <script is:inline>
-        (function() {
-            document.addEventListener('click', async (e) => {
-                const btn = e.target.closest('.btn');
-                if (!btn) return;
-                
-                const row = btn.closest('tr');
-                const id = row.dataset.id;
-                const action = btn.dataset.action;
-                const isAccept = action === 'accept';
-                
-                try {
-                    btn.disabled = true;
-                    row.style.opacity = '0.5';
-                    
-                    const response = await fetch('/api/update-user', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id, aceptado: isAccept })
-                    });
-    
-                    if (!response.ok) {
-                        throw new Error(await response.text());
-                    }
-    
-                    row.style.transition = 'opacity 0.3s';
-                    row.style.opacity = '0';
-                    setTimeout(() => row.remove(), 300);
-                    
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert(`❌ Error: ${error.message}`);
-                } finally {
-                    btn.disabled = false;
-                    row.style.opacity = '1';
-                }
-            });
-        })();
-    </script>
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+  </script>
+  <script is:inline>
 
-    <style>
-        :root {
-            --primary-color: #34495e;
-            --secondary-color: #2ecc71;
-            --danger-color: #e74c3c;
-            --bg-color: #f4f6f7;
-            --text-color: #2c3e50;
-            --shadow-color: rgba(0, 0, 0, 0.2);
+    (function () {
+      document.addEventListener("click", async (e) => {
+        const btn = e.target.closest(".btn");
+        if (!btn) return;
+
+        const row = btn.closest("tr");
+        const id = row.dataset.id;
+        const action = btn.dataset.action;
+        const isAccept = action === "accept";
+        const nombre = user.nombre;
+
+        try {
+          btn.disabled = true;
+          row.style.opacity = "0.5";
+
+          const response = await fetch("/api/update-user", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, aceptado: isAccept, nombreAdmin: window.user.nombre }),
+          });
+
+          if (!response.ok) {
+            throw new Error(await response.text());
+          }
+
+          row.style.transition = "opacity 0.3s";
+          row.style.opacity = "0";
+          setTimeout(() => row.remove(), 300);
+        } catch (error) {
+          console.error("Error:", error);
+          alert(`❌ Error: ${error.message}`);
+        } finally {
+          btn.disabled = false;
+          row.style.opacity = "1";
         }
+      });
+    })();
+  </script>
 
-        .container {
-            min-height: 100%;
-            max-width: 900px;
-            
-            padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px var(--shadow-color);
-            text-align: center;
-            transition: transform 0.3s ease-in-out;
-        }
+  <style>
+    :root {
+      --primary-color: #34495e;
+      --secondary-color: #2ecc71;
+      --danger-color: #e74c3c;
+      --bg-color: #f4f6f7;
+      --text-color: #2c3e50;
+      --shadow-color: rgba(0, 0, 0, 0.2);
+    }
 
-        h1 {
-            color: var(--primary-color);
-            margin-top: 0px;
-            margin-bottom: 1.5rem;
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
+    .container {
+      min-height: 100%;
+      max-width: 900px;
 
-        h3{
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            font-size: 1rem;
-            font-weight: bold;
-        }
+      padding: 2rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px var(--shadow-color);
+      text-align: center;
+      transition: transform 0.3s ease-in-out;
+    }
 
-        .table-container {
-            overflow-x: auto;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px var(--shadow-color);
-        }
+    h1 {
+      color: var(--primary-color);
+      margin-top: 0px;
+      margin-bottom: 1.5rem;
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-        }
+    h3 {
+      color: var(--primary-color);
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+      font-weight: bold;
+    }
 
-        th, td {
-            padding: 1.2rem;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-            color: black;
-        }
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px var(--shadow-color);
+    }
 
-        th {
-            background: var(--primary-color);
-            color: white;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
 
-        .actions {
-            display: flex;
-            gap: 0.8rem;
-        }
+    th,
+    td {
+      padding: 1.2rem;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      color: black;
+    }
 
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            box-shadow: 0 2px 5px var(--shadow-color);
-        }
+    th {
+      background: var(--primary-color);
+      color: white;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
 
-        .accept {
-            background: var(--secondary-color);
-            color: white;
-        }
+    .actions {
+      display: flex;
+      gap: 0.8rem;
+    }
 
-        .reject {
-            background: var(--danger-color);
-            color: white;
-        }
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      box-shadow: 0 2px 5px var(--shadow-color);
+    }
 
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
+    .accept {
+      background: var(--secondary-color);
+      color: white;
+    }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+    .reject {
+      background: var(--danger-color);
+      color: white;
+    }
 
-        .empty td {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-            font-size: 1.2rem;
-        }
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
 
-        .error {
-            background: #fee2e2;
-            color: #c0392b;
-            padding: 1.2rem;
-            border-radius: 6px;
-            margin: 2rem 0;
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-    </style>
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .empty td {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #c0392b;
+      padding: 1.2rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+  </style>
 </Layout>
