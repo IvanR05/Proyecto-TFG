@@ -70,10 +70,16 @@ const { data: aulasData, error: aulasError } = await supabase
             <strong>Observaciones:</strong>
             <span id="info-observaciones"></span>
           </p>
+          <p>
+            <strong>Ausencias:</strong> <br>
+            <span id="info-ausencias"></span>
+            <textarea class="hide-this" id="info-ausencias-edit"></textarea>
+          </p>
         </div>
 
         <div class="modal-buttons">
-          <button type="button" class="close-modal">Cerrar</button>
+          <button type="button" id="asignarb" class="close-modal hide-this">Asignar</button>
+          <button type="button" id="closeb"  class="close-modal">Cerrar</button>
         </div>
       </div>
     </div>
@@ -128,6 +134,9 @@ const { data: aulasData, error: aulasError } = await supabase
           <label>Observaciones:</label>
           <textarea id="edit-observaciones"></textarea>
 
+          <label>Ausencias:</label>
+          <textarea id="edit-ausencias"></textarea>
+
           <div class="modal-buttons">
             <button type="submit" class="confirm-button">Guardar Cambios</button
             >
@@ -145,13 +154,50 @@ const { data: aulasData, error: aulasError } = await supabase
   // Info Modal Handling
   document.addEventListener("open-info-modal", (e) => {
     const guardia = e.detail.guardia;
-    console.log(guardia)
+    
     const isMini = e.detail.isMini;
+    const isOwned = e.detail.isOwned;
+    
     let isActivada;
     if(isMini) {
       isActivada = e.detail.isActivada;
     }
     const modal = document.getElementById("info-modal");
+
+    const asignarButton = document.getElementById("asignarb");
+    const cerrarButton = document.getElementById("closeb");
+
+    asignarButton?.addEventListener("click", async function(e) {
+      addAsignacionGuardia(guardia);
+    })
+
+    cerrarButton.addEventListener('click', async (e) => {
+        e.stopImmediatePropagation();
+
+        if(!isOwned) return;
+
+        const nuevasAusencias = document.getElementById('info-ausencias-edit').value;
+        
+        try {
+            const response = await fetch('/api/update-guardia', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...guardia,
+                    ausencias: nuevasAusencias
+                })
+            });
+            
+            if (!response.ok) throw new Error('Error al guardar');
+            
+            modal.classList.remove("show");
+            location.reload();
+        } catch (error) {
+            console.error('Error:', error);
+            alert(error.message || 'Error guardando ausencias');
+        }
+    });
+
 
     // A parte de mostrar la propia informacion de la guardia.
 
@@ -161,6 +207,18 @@ const { data: aulasData, error: aulasError } = await supabase
 
     // Si no viene de mini:
     // - Si está owned: poder editar las ausencias. (añadir boton de guardado etc)
+
+    if(isOwned){
+        document.getElementById("info-ausencias-edit").classList.remove("hide-this");
+        document.getElementById("asignarb").classList.add("hide-this");
+        document.getElementById("info-ausencias").classList.add("hide-this");
+        
+    } else {
+        document.getElementById("info-ausencias").classList.remove("hide-this");
+        document.getElementById("info-ausencias-edit").classList.add("hide-this");
+        if(isActivada) document.getElementById("asignarb").classList.remove("hide-this");
+    }
+
 
     // Formatear fechas
     const fechaOptions = {
@@ -184,6 +242,9 @@ const { data: aulasData, error: aulasError } = await supabase
     document.getElementById("info-tipo").textContent = guardia.tipo;
     document.getElementById("info-observaciones").textContent =
       guardia.observaciones || "Ninguna";
+      document.getElementById("info-ausencias").textContent =
+      guardia.ausencias || "Ninguna";
+    document.getElementById("info-ausencias-edit").textContent = guardia.ausencias;
 
     modal.classList.add("show");
   });
@@ -233,6 +294,7 @@ const { data: aulasData, error: aulasError } = await supabase
     // Resto de campos
     document.getElementById("edit-tipo").value = guardia.tipo;
     document.getElementById("edit-observaciones").value = guardia.observaciones;
+    document.getElementById("edit-ausencias").value = guardia.ausencias;
 
     modal.classList.add("show");
   });
@@ -264,6 +326,7 @@ const { data: aulasData, error: aulasError } = await supabase
           tipo: document.getElementById("edit-tipo").value,
           id_aula: selectedAula.id_aula,
           observaciones: document.getElementById("edit-observaciones").value,
+          ausencias: document.getElementById("edit-ausencias").value,
         };
 
         const response = await fetch("/api/update-guardia", {
@@ -293,6 +356,25 @@ const { data: aulasData, error: aulasError } = await supabase
         });
       });
     });
+
+    async function addAsignacionGuardia(guardia) {
+      const userData = await fetch("/api/auth/get-user");
+      const user = await userData.json();
+
+      const data = { id_guardia: guardia.id, id_usuario: user.id };
+
+      try {
+        const response = await fetch("/api/add-asignaciones-guardia", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+        window.location.reload();
+      } catch (error) {
+        console.error("Error en la petición:", error);
+      }
+    }
 </script>
 
 <style>
@@ -410,5 +492,13 @@ const { data: aulasData, error: aulasError } = await supabase
     border: none;
     border-radius: 4px;
     cursor: pointer;
+  }
+
+  .hide-this {
+    display: none;
+  }
+
+  textarea {
+    width: 100%;
   }
 </style>

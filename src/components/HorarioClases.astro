@@ -159,7 +159,8 @@ if (user.tipo === "admin") {
           <div class="form-separator">
             <!-- Hidden input for non-admins -->
             {user.tipo !== "admin" && <input type="hidden" id="create-profe-id" value={user.id} />}
-            
+            {user.tipo == "admin" && <input type="hidden" id="create-user-id" value={user.id} />}
+
             <label>Aula:</label>
             <select id="create-aula" required>
               <option value="">Selecciona un aula</option>
@@ -284,7 +285,7 @@ if (user.tipo === "admin") {
     .addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const id_profesor = document.getElementById("create-profe-id").value;
+      const id_profesor = document.getElementById("create-profe-id").value || document.getElementById("create-user-id").value;
       const fecha = document.getElementById("create-fecha").value;
       const inicio = document.getElementById("create-inicio").value;
       const fin = document.getElementById("create-fin").value;

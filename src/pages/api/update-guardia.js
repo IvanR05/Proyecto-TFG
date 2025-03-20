@@ -54,7 +54,8 @@ export async function PUT({ request }) {
                 fin: finLocal,
                 tipo: body.tipo,
                 id_aula: body.id_aula,
-                observaciones: body.observaciones || null
+                observaciones: body.observaciones || null,
+                ausencias: body.ausencias || null
             })
             .eq('id', body.id)
             .select();
