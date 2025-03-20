@@ -153,6 +153,15 @@ const { data: aulasData, error: aulasError } = await supabase
     }
     const modal = document.getElementById("info-modal");
 
+    // A parte de mostrar la propia informacion de la guardia.
+
+    // Si viene de mini:
+    // - Si no está asignada: Mostrar profesores que pueden asignarse. Si eres admin poder elegir a quien asignar
+    // - Si está asignada: mostrar profesor asignado
+
+    // Si no viene de mini:
+    // - Si está owned: poder editar las ausencias. (añadir boton de guardado etc)
+
     // Formatear fechas
     const fechaOptions = {
       weekday: "long",
