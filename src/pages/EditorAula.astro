@@ -1,5 +1,6 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
+import { supabase } from "../lib/supabase.js";
 
 const queryParams = new URL(Astro.request.url).searchParams;
 const id = queryParams.get('id');
@@ -54,7 +55,7 @@ const editando = queryParams.get('editando');
             method = 'PUT';
             const idOriginal = urlParams.get('id');
             aulaData = {
-                id_original: idOriginal,  // Nombre correcto para el PUT
+                id_original: idOriginal,
                 id_nuevo: idInput,
                 curso_nuevo: grupoInput
             };
@@ -62,7 +63,7 @@ const editando = queryParams.get('editando');
             url = '/api/add-aula';
             method = 'POST';
             aulaData = {
-                id_aula: idInput,  // Nombre correcto para el POST
+                id_aula: idInput,
                 curso: grupoInput
             };
         }
@@ -114,7 +115,7 @@ const editando = queryParams.get('editando');
         display: flex;
         flex-direction: column;
         gap: 15px;
-        flex-grow: 1; /* Esto hace que los inputs ocupen el máximo espacio posible */
+        flex-grow: 1;
     }
 
     .inputs input {
@@ -133,7 +134,7 @@ const editando = queryParams.get('editando');
     }
 
     .buttons button {
-        width: 100%; /* Los botones ocuparán el 48% del ancho cada uno */
+        width: 100%;
         padding: 12px;
         font-size: 16px;
         border: none;
