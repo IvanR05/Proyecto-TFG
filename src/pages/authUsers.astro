@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { supabase } from "../lib/supabase.js";
 
+// Realiza una consulta a la tabla "usuarios" en Supabase
 const { data: usuarios, error } = await supabase
   .from("usuarios")
   .select(
@@ -14,6 +15,8 @@ const { data: usuarios, error } = await supabase
   )
   .eq("aceptado", false)
   .order("created_at", { ascending: true });
+
+  // Extiende la interfaz global "Window" para agregar la propiedad "user"
   declare global {
   interface Window {
     user?: { id: number; nombre: string; correo: number; tipo: string; auth_id: string }; // Ajusta según la estructura de tu usuario
@@ -26,7 +29,7 @@ const { data: usuarios, error } = await supabase
   <main class="container">
     <h1>Usuarios Pendientes de Aprobación</h1>
     <h3>
-      (Al rechazar los usuarios no se borrarán de la base de datos pero no
+      (Al rechazar los usuarios no se borrarán de la base de datos(de la tabla auth.user, de usuarios si)pero no
       tendrán acceso a la aplicación)
     </h3>
 
@@ -71,63 +74,87 @@ const { data: usuarios, error } = await supabase
     }
   </main>
   <script>
-    (async function () {
-      try {
-        const userData = await fetch("/api/auth/get-user");
-  
-        if (!userData.ok) {
-          throw new Error("Error al obtener los datos del usuario.");
-        }
-        
-  
-        window.user = await userData.json() || {};
-        console.log("usuario",window.user?.nombre);
+    // Función autoejecutable (IIFE) para obtener y manejar los datos del usuario
+(async function () {
+  try {
+    // Realiza una solicitud para obtener los datos del usuario desde la ruta "/api/auth/get-user"
+    const userData = await fetch("/api/auth/get-user");
 
-      } catch (error) {
-        console.error(error);
-      }
-    })();
+    // Si la respuesta no es correcta (código de estado no es 2xx), lanza un error
+    if (!userData.ok) {
+      throw new Error("Error al obtener los datos del usuario.");
+    }
+
+    // Si la respuesta es exitosa, convierte los datos en JSON y asigna los datos al objeto global "window.user"
+    window.user = await userData.json() || {}; // Si no se recibe datos, asigna un objeto vacío
+
+    // Muestra el nombre del usuario en la consola si los datos fueron obtenidos correctamente
+    console.log("usuario", window.user?.nombre);
+
+  } catch (error) {
+    // Si ocurre un error durante la ejecución, lo muestra en la consola
+    console.error(error);
+  }
+})();
+
   </script>
-  <script is:inline>
+ <script is:inline>
 
+    // Función autoejecutable (IIFE) para manejar el clic en botones y realizar una actualización
     (function () {
+      // Agrega un evento "click" a todo el documento
       document.addEventListener("click", async (e) => {
+        // Obtiene el botón que fue clickeado, si no es un botón válido, termina la función
         const btn = e.target.closest(".btn");
         if (!btn) return;
-
+  
+        // Obtiene la fila (tr) que contiene el botón
         const row = btn.closest("tr");
+        // Obtiene el ID de la fila, que está almacenado en un atributo de datos personalizado
         const id = row.dataset.id;
+        // Obtiene la acción (aceptar o rechazar) que está asociada al botón
         const action = btn.dataset.action;
+        // Determina si la acción es "aceptar"
         const isAccept = action === "accept";
+        // Obtiene el nombre del usuario admin desde el objeto global "window.user"
         const nombre = user.nombre;
-
+  
         try {
+          // Desactiva el botón para evitar múltiples clics y cambia la opacidad de la fila para dar un efecto visual
           btn.disabled = true;
           row.style.opacity = "0.5";
-
+  
+          // Realiza una solicitud PUT a la API para actualizar los datos del usuario
           const response = await fetch("/api/update-user", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, aceptado: isAccept, nombreAdmin: window.user.nombre }),
+            method: "PUT", // Método PUT para actualizar
+            headers: { "Content-Type": "application/json" }, // Configura el tipo de contenido como JSON
+            body: JSON.stringify({ id, aceptado: isAccept, nombreAdmin: window.user.nombre }), // Envia los datos al servidor
           });
-
+  
+          // Si la respuesta no es exitosa, lanza un error con el mensaje recibido
           if (!response.ok) {
             throw new Error(await response.text());
           }
-
-          row.style.transition = "opacity 0.3s";
-          row.style.opacity = "0";
-          setTimeout(() => row.remove(), 300);
+  
+          // Si todo sale bien, realiza una transición para ocultar la fila y eliminarla después de un breve retraso
+          row.style.transition = "opacity 0.3s"; // Define la transición de opacidad
+          row.style.opacity = "0"; // Hace que la fila se desvanezca
+          setTimeout(() => row.remove(), 300); // Elimina la fila después de que la opacidad se haya desvanecido
+  
         } catch (error) {
+          // Si ocurre un error, muestra un mensaje de error en la consola y una alerta
           console.error("Error:", error);
           alert(`❌ Error: ${error.message}`);
         } finally {
+          // Independientemente de si la operación fue exitosa o no, reactiva el botón y restaura la opacidad de la fila
           btn.disabled = false;
           row.style.opacity = "1";
         }
       });
     })();
+  
   </script>
+  
 
   <style>
     :root {

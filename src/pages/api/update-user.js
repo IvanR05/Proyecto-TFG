@@ -5,6 +5,7 @@ export async function PUT({ request }) {
     const body = await request.json();
     console.log("Datos recibidos:", body);
 
+    //Comprobamos que estén todos los datos
     if (!body.id || typeof body.aceptado !== 'boolean' || !body.nombreAdmin) {
       return invalidResponse("Datos incompletos", 400);
     }
@@ -32,7 +33,7 @@ export async function PUT({ request }) {
         .eq('id', body.id)
     );
 
-     // 🔹 Obtener el nombre del usuario usando su ID
+     // Obtener el nombre del usuario usando su ID
      const { data: user, error: userError } = await supabase
      .from('usuarios')
      .select('nombre')
@@ -46,6 +47,7 @@ export async function PUT({ request }) {
    const nombreUsuario = user?.nombre || 'Usuario desconocido'; 
 
     if (body.guardias && Array.isArray(body.guardias)) {
+      //Se crea una nueva guardia
       const newGuardias = body.guardias.map((g) => ({
         dia_semana: g.dia,
         inicio: g.inicio,
@@ -53,6 +55,7 @@ export async function PUT({ request }) {
         turno: g.turno,
       }));
 
+      //Si la guardia ya no existe la borra
       const toDelete = existingSchedules.filter((existing) =>
         !newGuardias.some((newG) =>
           newG.dia_semana === existing.dia_semana &&
@@ -71,6 +74,7 @@ export async function PUT({ request }) {
         );
       }
 
+      //crea los nuevos horarios
       const nuevasGuardias = body.guardias.map(guardia => ({
         id_profesor: body.id,
         dia_semana: guardia.dia,
@@ -79,6 +83,7 @@ export async function PUT({ request }) {
         turno: guardia.turno
       }));
 
+      //Inserta los horarios en la base de datos
       updatePromises.push(
         supabase
           .from('horarios_profesor')
@@ -86,13 +91,14 @@ export async function PUT({ request }) {
       );
     }
 
+    //Espera a que todo termine y comprueba si a habido errores
     const results = await Promise.all(updatePromises);
     const errors = results.filter(r => r.error);
     if (errors.length > 0) {
       throw new Error(`Error en actualización: ${errors.map(e => e.error.message).join(', ')}`);
     }
 
-    // 🔥 Llamar a `generarNotificacion` después de actualizar
+    // Llamar a `generarNotificacion` después de actualizar
     await generarNotificacion(body.nombreAdmin, nombreUsuario);
     console.log(body.nombre);
 
@@ -127,6 +133,7 @@ async function generarNotificacion(nombreAdmin, nombreUsuario) {
 
     if (adminsError) throw new Error('Error al obtener administradores');
 
+    //Avisa si no hay administradores
     if (admins.length === 0) {
       console.warn("No hay administradores para recibir la notificación.");
       return;

@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { supabase } from "../lib/supabase.js";
 
+//Consulta a supabase que devuelve usuarios
 const { data: usuarios, error } = await supabase
   .from("usuarios")
   .select("id, nombre, correo, tipo, aceptado, created_at")
@@ -90,25 +91,37 @@ const { data: usuarios, error } = await supabase
   </main>
 
   <script is:inline>
+    // Espera a que el contenido del DOM esté completamente cargado antes de ejecutar el código
     document.addEventListener("DOMContentLoaded", () => {
+      // Selecciona todos los botones de filtro
       const filterButtons = document.querySelectorAll(".filter-btn");
+      // Selecciona el input de búsqueda
       const searchInput = document.getElementById("search-input");
+      // Selecciona todas las filas de usuarios
       const userRows = document.querySelectorAll(".user-row");
+      // Selecciona la fila que muestra cuando no se encuentran resultados
       const noResultsRow = document.querySelector(".no-results");
-
+  
+      // Función para filtrar los usuarios según el filtro activo y el valor de búsqueda
       function filterUsers() {
+        // Convierte el valor de búsqueda a minúsculas para una comparación insensible al caso
         const searchValue = searchInput.value.toLowerCase();
-        const activeFilter =
-          document.querySelector(".filter-btn.active").dataset.filter;
+        // Obtiene el filtro activo
+        const activeFilter = document.querySelector(".filter-btn.active").dataset.filter;
+        // Variable para verificar si hay resultados
         let hasResults = false;
-
+  
+        // Itera sobre cada fila de usuario
         userRows.forEach((row) => {
+          // Obtiene el nombre y el estado de la fila de usuario
           const name = row.dataset.name;
           const status = row.dataset.status;
-          const matchesFilter =
-            activeFilter === "all" || status === activeFilter;
+          
+          // Verifica si la fila coincide con el filtro activo y el valor de búsqueda
+          const matchesFilter = activeFilter === "all" || status === activeFilter;
           const matchesSearch = name.includes(searchValue);
-
+  
+          // Si la fila cumple con los criterios, la muestra; si no, la oculta
           if (matchesFilter && matchesSearch) {
             row.style.display = "";
             hasResults = true;
@@ -116,21 +129,28 @@ const { data: usuarios, error } = await supabase
             row.style.display = "none";
           }
         });
-
+  
+        // Muestra u oculta la fila de "sin resultados" dependiendo si se encontraron resultados
         noResultsRow.style.display = hasResults ? "none" : "table-row";
       }
-
+  
+      // Añade un evento de clic a cada botón de filtro
       filterButtons.forEach((button) => {
         button.addEventListener("click", (e) => {
+          // Elimina la clase "active" de todos los botones
           filterButtons.forEach((btn) => btn.classList.remove("active"));
+          // Añade la clase "active" al botón clickeado
           e.target.classList.add("active");
+          // Llama a la función de filtrado
           filterUsers();
         });
       });
-
+  
+      // Añade un evento para filtrar cuando el usuario escriba en el campo de búsqueda
       searchInput.addEventListener("input", filterUsers);
     });
   </script>
+  
 
   <style>
     /* Contenedor principal */

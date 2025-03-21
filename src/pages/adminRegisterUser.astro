@@ -225,6 +225,7 @@
     </div>
 
     <script>
+      //Funciones que se ejecutan al cargar la página
       window.onload = function () {
         localStorage.removeItem("selectedCells"); // Limpiar las selecciones al cargar la página
         selectedCells = []; // Limpiar la lista de celdas seleccionadas
@@ -234,8 +235,10 @@
         selectedCells = []; // Limpiar la lista de celdas seleccionadas
       });
 
+      //Recupera los datos del usuario
       const userData = await fetch("/api/auth/get-user");
 
+      //Recupera los datos del usuario logeado
       if (userData.ok) {
         const user = await userData.json();
         console.log(user);
@@ -285,6 +288,7 @@
           console.error("No se encontró el nombre de usuario.");
         }
 
+        //Metodo post que se pasa a registerAdmin para registrar un nuevo usuario
         const response = await fetch("/api/auth/registerAdmin", {
           method: "POST",
           body: formData,
@@ -498,6 +502,8 @@
       function handleGuardSelection(hour, day) {
         selectedGuardias++;
       }
+
+      //Función para recuperar las guardias seleccionadas
       function getSelectedGuards() {
         const horarios =
           document.querySelectorAll<HTMLTableRowElement>("#scheduleBody tr");
@@ -532,6 +538,7 @@
 
       const closeScheduleBtn = document.getElementById("closeScheduleBtn");
 
+      //Cuando se pulsa el boton de cerrar se guardan todos los datos seleccionados
       if (closeScheduleBtn) {
         closeScheduleBtn.addEventListener("click", () => {
           const guardiasSeleccionadas = getSelectedGuards();
