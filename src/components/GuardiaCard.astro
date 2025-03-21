@@ -167,7 +167,7 @@ function formatTime(date) {
             const response = await fetch('/api/delete-guardia', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: guardiaObj.id }),
+                body: JSON.stringify({ id: guardiaObj.id, id_aula: guardiaObj.id_aula }),
             });
 
             const data = await response.json();

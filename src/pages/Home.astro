@@ -368,7 +368,6 @@ const { data: aulasData, error: aulasError } = await supabase
           throw new Error(errorData.message || `Error: ${response.status}`);
         }
 
-        closeEditModal();
         location.reload();
       } catch (error) {
         console.error("Error actualizando guardia:", error);
@@ -389,7 +388,7 @@ const { data: aulasData, error: aulasError } = await supabase
       const userData = await fetch("/api/auth/get-user");
       const user = await userData.json();
 
-      const data = { id_guardia: guardia.id, id_usuario: user.id };
+      const data = { id_guardia: guardia.id, id_usuario: user.id, nombreUsuario: user.nombre, inicio: guardia.inicio, id_aula: guardia.id_aula };
 
       try {
         const response = await fetch("/api/add-asignaciones-guardia", {
