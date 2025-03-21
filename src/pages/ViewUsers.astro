@@ -89,6 +89,10 @@ const { data: usuarios, error } = await supabase
       )
     }
   </main>
+  <a href="/adminRegisterUser" class="add-user-button">
+    +
+  </a>
+</AppLayout>
 
   <script is:inline>
     // Espera a que el contenido del DOM esté completamente cargado antes de ejecutar el código
@@ -299,6 +303,38 @@ const { data: usuarios, error } = await supabase
       background: #3498DB;
     }
 
+    :root {
+    --color-primario: #2C3E50;
+    --color-secundario: #3498DB;
+    --color-texto: #2C3E50;
+    --color-fondo: #b0f7fc;
+    --sombra: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+    .add-user-button {
+    position: fixed;
+    bottom: 100px; /* Se asegura que el botón esté encima de la barra de navegación, dejando espacio de 80px */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 60px;
+    background-color: var(--color-secundario); /* Azul según tu esquema */
+    color: white;
+    text-decoration: none !important; /* Asegura que el subrayado se elimine */
+    border-radius: 50%; /* Lo hace completamente redondo */
+    font-size: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 10; /* Asegura que el botón quede por encima de otros elementos */
+  }
+
+  .add-user-button:hover {
+    background-color: #2980b9; /* Cambia el color cuando pasa el ratón */
+  }
+
     /* Respuesta a pantallas pequeñas */
     @media (max-width: 768px) {
       .content-wrapper {
@@ -337,4 +373,4 @@ const { data: usuarios, error } = await supabase
       }
     }
   </style>
-</AppLayout>
+

@@ -61,23 +61,16 @@ const turnoActual =
   guardiasExistentes && guardiasExistentes.length > 0
     ? guardiasExistentes[0].turno
     : "diurno";
-
-
-declare global {
-  interface Window {
-    user?: { id: number; nombre: string; correo: number; tipo: string; auth_id: string }; // Ajusta según la estructura de tu usuario
-  }
-}
 ---
 
 <AppLayout page_title={`Editar Usuario - ${usuario.nombre || "Sin nombre"}`}>
   <script define:vars={{ guardiasData }}>
-    // Lado del cliente
-    console.log("Guardias:", guardiasData);
+    // Client-side
+    console.log("Guardias:", guardiasData); // Directly available
     window.preloadedGuardiasData = guardiasData;
   </script>
   <main class="edit-form-container">
-    <h1><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/><path d="m15 5 3 3"/></svg> Editar Usuario</h1>
+    <h1>✏️ Editar Usuario</h1>
 
     <form id="edit-user-form">
       <div class="form-group">
@@ -129,13 +122,13 @@ declare global {
 
       <div class="form-actions">
         <button type="button" id="assignGuardsBtn" class="assign-btn"
-          ><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg> Gestionar Guardias</button
+          >📅 Gestionar Guardias</button
         >
-        <button type="submit" class="save-btn"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg> Guardar cambios</button>
-        <a href="/ViewUsers" class="cancel-btn"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> Cancelar</a>
+        <button type="submit" class="save-btn">💾 Guardar cambios</button>
+        <a href="/ViewUsers" class="cancel-btn">❌ Cancelar</a>
       </div>
     </form>
- 
+
     <!-- Modal de Horarios -->
     <div id="scheduleTable">
       <h3>Gestor de Guardias</h3>
@@ -160,24 +153,7 @@ declare global {
       </div>
     </div>
   </main>
-  <script>
-    (async function () {
-      try {
-        const userData = await fetch("/api/auth/get-user");
-  
-        if (!userData.ok) {
-          throw new Error("Error al obtener los datos del usuario.");
-        }
-        
-  
-        window.user = await userData.json() || {};
-        console.log("usuario",window.user?.nombre);
 
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  </script>
   <script is:inline>
     // Inicializar con datos precargados
     let selectedCells = window.preloadedGuardiasData || [];
@@ -194,8 +170,8 @@ declare global {
 
     // Función para formatear la hora a "hh:mm - hh:mm"
     function formatHora(hora) {
-      // Verificar si la hora tiene el formato correcto (HH:mm)
-      if (!/^\d{2}:\d{2}/.test(hora)) {
+      // Verificar si la hora tiene el formato correcto (HH:mm:ss)
+      if (!/^\d{1,2}:\d{2}/.test(hora)) {
         console.error("Formato de hora incorrecto:", hora);
         return "00:00"; // Devolver un valor por defecto si el formato es incorrecto
       }
@@ -203,7 +179,6 @@ declare global {
       return hora.slice(0, 5); // Extraer HH:mm de la hora
     }
 
-    //Función para cargar las horas del horario correspondiente
     async function loadHoras() {
       try {
         const response = await fetch("/src/assets/horario.json");
@@ -348,7 +323,6 @@ declare global {
             fin: g.hora.split(" - ")[1],
             turno: g.turno,
           })),
-          nombreAdmin: window.user.nombre
         };
 
         try {
@@ -426,9 +400,9 @@ declare global {
 }
 
 #scheduleTable td.selected {
-  background: #3498DB !important;
+  background: #48bb78 !important;
   color: white;
-  border-color: #3498DB !important;
+  border-color: #38a169 !important;
 }
 
 /* Form group and inputs */
@@ -445,7 +419,7 @@ label {
 
 input,
 select {
-  width: 90%;
+  width: 100%;
   padding: 0.75rem;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -483,27 +457,27 @@ button {
   transition: opacity 0.2s ease;
 }
 
-a {
+.save-btn {
+  background: #48bb78;
+  color: white;
+}
+
+.cancel-btn {
   background: #e53e3e;
   color: white;
   text-align: center;
   padding: 0.75rem 1.5rem;
-  border: none;
+  font-size: 1rem;
   border-radius: 8px;
-  font-weight: 600;
   cursor: pointer;
   display: inline-block;
-  transition: opacity 0.2s ease;
-  text-decoration: none;
-}
-
-.save-btn {
-  background: #3498DB;
-  color: white;
+  width: auto;
+  max-width: 200px;
+  margin-top: 1rem;
 }
 
 .assign-btn {
-  background: #3498DB;
+  background: #4299e1;
   color: white;
 }
 
@@ -524,7 +498,7 @@ button:hover {
 }
 
 .close-btn {
-  background: #3498DB;
+  background: #48bb78;
   color: white;
 }
 
