@@ -7,9 +7,8 @@ En este repositorio se encuentra el código fuente de la aplicación, realizada 
 ## 🔗 Enlaces
 Para acceder a la documentación usa los siguientes enlaces:
 
-- [Gestión del proyecto](https://google.com)
-- [Manual del programador](https://google.com)
-- [Manual de Usuario](https://google.com)
+- [Memoria](https://docs.google.com/document/d/12LQkPqFw-eJH_cEtEQzYOMjIVnU2qBGpSoCYSukQNoY/edit?usp=drive_link)
+- [Manual de Usuario](https://docs.google.com/document/d/1IXno3mqqdxoyc1KdFP9Lf5Opy7KnebWr5hMw_yzgjVk/edit?usp=drive_link)
 
 
 ## 👥 Integrantes del grupo
