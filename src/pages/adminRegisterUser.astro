@@ -225,6 +225,7 @@
     </div>
 
     <script>
+      //Funciones que se ejecutan al cargar la página
       window.onload = function () {
         localStorage.removeItem("selectedCells"); // Limpiar las selecciones al cargar la página
         selectedCells = []; // Limpiar la lista de celdas seleccionadas
@@ -233,6 +234,26 @@
         localStorage.removeItem("selectedCells"); // Limpiar las selecciones al cargar la página
         selectedCells = []; // Limpiar la lista de celdas seleccionadas
       });
+
+      //Recupera los datos del usuario
+      const userData = await fetch("/api/auth/get-user");
+
+      //Recupera los datos del usuario logeado
+      if (userData.ok) {
+        const user = await userData.json();
+        console.log(user);
+        // Verificar si el elemento con id 'userName' existe antes de modificar su contenido
+        const userNameElement = document.getElementById("nombre");
+        if (userNameElement) {
+          userNameElement.textContent = user.nombre;
+        } else {
+          console.error(
+            "El elemento con id 'userName' no se encontró en el DOM."
+          );
+        }
+      } else {
+        console.error("Error al obtener los datos del usuario.");
+      }
 
       // Función para generar una contraseña aleatoria
       function generateRandomPassword(length = 12) {
@@ -259,7 +280,15 @@
           "guardiasSeleccionadas",
           JSON.stringify(guardiasSeleccionadas)
         );
+        const userNameElement = document.getElementById("nombre");
+        if (userNameElement && userNameElement.textContent) {
+          formData.append("nombre2", userNameElement.textContent);
+          console.log(userNameElement.textContent);
+        } else {
+          console.error("No se encontró el nombre de usuario.");
+        }
 
+        //Metodo post que se pasa a registerAdmin para registrar un nuevo usuario
         const response = await fetch("/api/auth/registerAdmin", {
           method: "POST",
           body: formData,
@@ -336,7 +365,7 @@
 
       // Función para cargar las horas desde el archivo JSON
       async function loadHoras() {
-        const response = await fetch("/src/assets/horario.json"); // Asegúrate de que el archivo JSON esté en el mismo directorio o usa la ruta correcta
+        const response = await fetch("../src/assets/horario.json"); // Asegúrate de que el archivo JSON esté en el mismo directorio o usa la ruta correcta
         const horarios = await response.json();
         return horarios;
       }
@@ -408,7 +437,7 @@
             cell.style.backgroundColor = "white"; // Forzar fondo blanco
             cell.style.border = "2px solid #000"; // Asegurar el borde desde el inicio
 
-            // Verificar si la celda fue seleccionada previamente y restaurar el estado 
+            // Verificar si la celda fue seleccionada previamente y restaurar el estado
             const cellId = `${i}-${j}`;
             if (selectedCells.includes(cellId)) {
               cell.classList.add("selected");
@@ -473,6 +502,8 @@
       function handleGuardSelection(hour, day) {
         selectedGuardias++;
       }
+
+      //Función para recuperar las guardias seleccionadas
       function getSelectedGuards() {
         const horarios =
           document.querySelectorAll<HTMLTableRowElement>("#scheduleBody tr");
@@ -507,6 +538,7 @@
 
       const closeScheduleBtn = document.getElementById("closeScheduleBtn");
 
+      //Cuando se pulsa el boton de cerrar se guardan todos los datos seleccionados
       if (closeScheduleBtn) {
         closeScheduleBtn.addEventListener("click", () => {
           const guardiasSeleccionadas = getSelectedGuards();
