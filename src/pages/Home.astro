@@ -57,11 +57,41 @@ const { data: aulasData, error: aulasError } = await supabase
   <br /><br /><br /><br /><br /><br />
   <!--Deja espacio para la NavBar -->
 
+  <div id="info-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-section">
+        <h3 class="modal-title">Detalles de Guardia</h3>
+        <div class="modal-body">
+          <p id="profesdispo"><strong>Profes disponibles:</strong> <span id="info-profes-dispo"></span></p> 
+          <p><strong>Fecha:</strong> <span id="info-fecha"></span></p>
+          <p><strong>Hora:</strong> <span id="info-hora"></span></p>
+          <p><strong>Aula:</strong> <span id="info-aula"></span></p>
+          <p><strong>Tipo:</strong> <span id="info-tipo"></span></p>
+          <p>
+            <strong>Observaciones:</strong>
+            <span id="info-observaciones"></span>
+          </p>
+          <p>
+            <strong>Ausencias:</strong> <br>
+            <span id="info-ausencias"></span>
+            <textarea class="hide-this" id="info-ausencias-edit"></textarea>
+          </p>
+        </div>
+
+        <div class="modal-buttons">
+          <button type="button" id="asignarb" class="close-modal hide-this">Asignar</button>
+          <button type="button" id="closeb"  class="close-modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
   <div id="edit-modal" class="modal">
     <div class="modal-content">
-      <div class="normal-section">
-        <h3>Editar Guardia</h3>
-        <form id="edit-guardia-form">
+      <div class="modal-section">
+        <h3 class="modal-title">Editar Guardia</h3>
+        <form id="edit-guardia-form" class="modal-form">
           <input type="hidden" id="edit-guardia-id" />
 
           <!-- Nuevo campo para la fecha -->
@@ -86,8 +116,8 @@ const { data: aulasData, error: aulasError } = await supabase
           <!-- Campos restantes -->
           <label>Tipo:</label>
           <select id="edit-tipo" required>
-            <option value="recreo">Recreo</option>
-            <option value="clase">Clase</option>
+            <option value="Recreo">Recreo</option>
+            <option value="Clase">Clase</option>
           </select>
 
           <label>Aula:</label>
@@ -105,6 +135,9 @@ const { data: aulasData, error: aulasError } = await supabase
           <label>Observaciones:</label>
           <textarea id="edit-observaciones"></textarea>
 
+          <label>Ausencias:</label>
+          <textarea id="edit-ausencias"></textarea>
+
           <div class="modal-buttons">
             <button type="submit" class="confirm-button">Guardar Cambios</button
             >
@@ -119,7 +152,135 @@ const { data: aulasData, error: aulasError } = await supabase
 </AppLayout>
 
 <script is:inline>
+  // Info Modal Handling
+  document.addEventListener("open-info-modal", (e) => {
+    const guardia = e.detail.guardia;
+    
+    const isMini = e.detail.isMini;
+    const isOwned = e.detail.isOwned;
+    
+    let profesDispo;
+    let isActivada;
+    let isAsignada;
+    if(isMini) {
+      isActivada = e.detail.isActivada;
+      isAsignada = e.detail.isAsignada;
+      profesDispo = e.detail.profesDispo;
+    }
+    const modal = document.getElementById("info-modal");
+
+    const asignarButton = document.getElementById("asignarb");
+    const cerrarButton = document.getElementById("closeb");
+
+    asignarButton?.addEventListener("click", async function(e) {
+      addAsignacionGuardia(guardia);
+    })
+
+    cerrarButton.addEventListener('click', async (e) => {
+        e.stopImmediatePropagation();
+
+        console.log(isOwned);
+        
+        if(!isOwned){
+          location.reload();
+          return;
+        } 
+
+        const nuevasAusencias = document.getElementById('info-ausencias-edit').value;
+        
+        try {
+            const response = await fetch('/api/update-guardia', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...guardia,
+                    ausencias: nuevasAusencias
+                })
+            });
+            
+            if (!response.ok) throw new Error('Error al guardar');
+            
+            modal.classList.remove("show");
+            location.reload();
+        } catch (error) {
+            console.error('Error:', error);
+            alert(error.message || 'Error guardando ausencias');
+        }
+    });
+
+
+    // A parte de mostrar la propia informacion de la guardia.
+
+    // Si viene de mini:
+    // - Si no está asignada: Mostrar profesores que pueden asignarse. Si eres admin poder elegir a quien asignar
+    // - Si está asignada: mostrar profesor asignado
+
+    // Si no viene de mini:
+    // - Si está owned: poder editar las ausencias. (añadir boton de guardado etc)
+
+    
+
+    if(isMini){
+      document.getElementById("profesdispo").classList.remove("hide-this");
+      document.getElementById("info-ausencias").classList.remove("hide-this");
+      document.getElementById("info-ausencias-edit").classList.add("hide-this");
+      
+      if(!isAsignada && isActivada){ // Si no está cogida y está activa, mostramos boton
+        document.getElementById("asignarb").classList.remove("hide-this");
+      } else {
+        document.getElementById("asignarb").classList.add("hide-this");
+      } 
+    }
+    if(!isMini){
+      document.getElementById("profesdispo").classList.add("hide-this");
+      if(isOwned){
+        document.getElementById("asignarb").classList.add("hide-this");
+        document.getElementById("info-ausencias-edit").classList.remove("hide-this");
+        document.getElementById("info-ausencias").classList.add("hide-this");
+      } else {
+        document.getElementById("asignarb").classList.remove("hide-this");
+        document.getElementById("info-ausencias").classList.remove("hide-this");
+        document.getElementById("info-ausencias-edit").classList.add("hide-this");
+      }
+    }
+
+    
+
+
+    // Formatear fechas
+    const fechaOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    const horaOptions = { hour: "2-digit", minute: "2-digit" };
+
+    // Establecer valores
+    document.getElementById("info-fecha").textContent = new Date(
+      guardia.inicio,
+    ).toLocaleDateString("es-ES", fechaOptions);
+
+    document.getElementById("info-hora").textContent =
+      `${new Date(guardia.inicio).toLocaleTimeString("es-ES", horaOptions)} - 
+      ${new Date(guardia.fin).toLocaleTimeString("es-ES", horaOptions)}`;
+
+    document.getElementById("info-aula").textContent = guardia.id_aula;
+    document.getElementById("info-tipo").textContent = guardia.tipo;
+    document.getElementById("info-observaciones").textContent =
+      guardia.observaciones || "Ninguna";
+      document.getElementById("info-ausencias").textContent =
+      guardia.ausencias || "Ninguna";
+    document.getElementById("info-ausencias-edit").textContent = guardia.ausencias;
+    document.getElementById("info-profes-dispo").textContent = (!profesDispo || profesDispo.length == 0) ? "Ninguno" : profesDispo.join(", ");
+
+    modal.classList.add("show");
+  });
+
+  /* Edit modal */
   document.addEventListener("open-edit-modal", (e) => {
+    e.stopPropagation();
+
     const guardia = e.detail;
     const modal = document.getElementById("edit-modal");
 
@@ -161,64 +322,86 @@ const { data: aulasData, error: aulasError } = await supabase
     // Resto de campos
     document.getElementById("edit-tipo").value = guardia.tipo;
     document.getElementById("edit-observaciones").value = guardia.observaciones;
+    document.getElementById("edit-ausencias").value = guardia.ausencias;
 
     modal.classList.add("show");
   });
 
   // Submit handler actualizado
-  document.getElementById("edit-guardia-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  document
+    .getElementById("edit-guardia-form")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-    try {
-      // Validar campos
-      const fecha = document.getElementById("edit-fecha").value;
-      const tramo = JSON.parse(document.getElementById("edit-tramo").value);
-      const aulaSelect = document.getElementById("edit-aula");
-      
-      if (!fecha || !tramo || !aulaSelect.value) {
-        alert("Por favor completa todos los campos requeridos");
-        return;
+      try {
+        // Validar campos
+        const fecha = document.getElementById("edit-fecha").value;
+        const tramo = JSON.parse(document.getElementById("edit-tramo").value);
+        const aulaSelect = document.getElementById("edit-aula");
+
+        if (!fecha || !tramo || !aulaSelect.value) {
+          alert("Por favor completa todos los campos requeridos");
+          return;
+        }
+
+        // Parsear aula
+        const selectedAula = JSON.parse(aulaSelect.value);
+
+        const updatedGuardia = {
+          id: document.getElementById("edit-guardia-id").value,
+          inicio: new Date(`${fecha}T${tramo.start}`).toISOString(),
+          fin: new Date(`${fecha}T${tramo.end}`).toISOString(),
+          tipo: document.getElementById("edit-tipo").value,
+          id_aula: selectedAula.id_aula,
+          observaciones: document.getElementById("edit-observaciones").value,
+          ausencias: document.getElementById("edit-ausencias").value,
+        };
+
+        const response = await fetch("/api/update-guardia", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedGuardia),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Error: ${response.status}`);
+        }
+
+        location.reload();
+      } catch (error) {
+        console.error("Error actualizando guardia:", error);
+        alert(error.message || "Error al actualizar la guardia");
       }
+    });
 
-      // Parsear aula
-      const selectedAula = JSON.parse(aulaSelect.value);
-      
-      const updatedGuardia = {
-        id: document.getElementById("edit-guardia-id").value,
-        inicio: new Date(`${fecha}T${tramo.start}`).toISOString(),
-        fin: new Date(`${fecha}T${tramo.end}`).toISOString(),
-        tipo: document.getElementById("edit-tipo").value,
-        id_aula: selectedAula.id_aula,
-        observaciones: document.getElementById("edit-observaciones").value,
-      };
-
-      const response = await fetch("/api/update-guardia", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedGuardia),
+    // Close both modals with same class
+    document.querySelectorAll(".close-modal").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".modal").forEach(modal => {
+          modal.classList.remove("show");
+        });
       });
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error: ${response.status}`);
+    async function addAsignacionGuardia(guardia) {
+      const userData = await fetch("/api/auth/get-user");
+      const user = await userData.json();
+
+      const data = { id_guardia: guardia.id, id_usuario: user.id, nombreUsuario: user.nombre, inicio: guardia.inicio, id_aula: guardia.id_aula };
+
+      try {
+        const response = await fetch("/api/add-asignaciones-guardia", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(`Error: ${response.status}`);
+        window.location.reload();
+      } catch (error) {
+        console.error("Error en la petición:", error);
       }
-      
-      closeEditModal();
-      location.reload();
-
-    } catch (error) {
-      console.error("Error actualizando guardia:", error);
-      alert(error.message || "Error al actualizar la guardia");
     }
-  });
-
-  function closeEditModal() {
-    const modal = document.getElementById("edit-modal");
-    modal.classList.remove("show");
-    document.body.classList.remove("modal-open");
-  }
-
-  document.getElementById("close-edit-modal").addEventListener("click", closeEditModal);
 </script>
 
 <style>
@@ -226,26 +409,7 @@ const { data: aulasData, error: aulasError } = await supabase
     background-color: rgb(226, 251, 255);
   }
 
-  /* Estilos para el modal de edición */
-  #edit-modal .modal-content {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    position: relative;
-    /* Centrado vertical y horizontal */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  .normal-section {
-    padding: 10px;
-  }
-
-  #edit-modal {
+  .modal {
     display: none;
     position: fixed;
     top: 0;
@@ -256,43 +420,112 @@ const { data: aulasData, error: aulasError } = await supabase
     z-index: 1000;
   }
 
-  #edit-modal.show {
-    display: block; /* Cambiado de flex a block para el transform */
+  .modal.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
-  #edit-guardia-form {
+  .modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .modal-section {
+    padding: 10px;
+  }
+
+  .modal-title {
+    margin-bottom: 1.5rem;
+    color: #1a237e;
+  }
+
+  .modal-buttons {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+  }
+
+  /* Shared Form Styles */
+  .modal-form {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  #edit-guardia-form label {
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
     font-weight: bold;
+    color: #333;
   }
 
-  #edit-guardia-form input,
-  #edit-guardia-form select,
-  #edit-guardia-form textarea {
-    padding: 0.5rem;
+  .form-input,
+  .form-select,
+  .form-textarea {
+    width: 100%;
+    padding: 0.75rem;
     border: 1px solid #ddd;
     border-radius: 4px;
-    width: 100%;
+    font-size: 1rem;
   }
 
-  /* Añade estos estilos */
-  #edit-tramo {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 1rem;
+  .form-textarea {
+    min-height: 100px;
+    resize: vertical;
   }
 
-  #edit-fecha {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
+  /* Info Modal Specific Styles */
+  #info-modal .modal-content {
+    max-width: 600px;
+  }
+
+  #info-content {
+    line-height: 1.6;
+  }
+
+  /* Edit Modal Specific Styles */
+  #edit-modal .form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,...");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 0.65em auto;
+  }
+
+  /* Shared Button Styles */
+  .confirm-button {
+    background-color: #2196f3;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
     border-radius: 4px;
-    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+
+  .close-modal {
+    background-color: #f44336;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .hide-this {
+    display: none;
+  }
+
+  textarea {
+    width: 100%;
   }
 </style>

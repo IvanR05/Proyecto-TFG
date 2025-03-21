@@ -4,9 +4,11 @@ import { supabase } from "../lib/supabase";
 const { guardia, user } = Astro.props;
 
 const todayDate = new Date();
-const todayLocal = new Date(todayDate.getTime() - todayDate.getTimezoneOffset() * 60000) // Ajusta a la zona horaria local
-  .toISOString()
-  .split("T")[0]; // Extrae YYYY-MM-DD basado en la zona horaria local
+const todayLocal = new Date(
+    todayDate.getTime() - todayDate.getTimezoneOffset() * 60000,
+) // Ajusta a la zona horaria local
+    .toISOString()
+    .split("T")[0]; // Extrae YYYY-MM-DD basado en la zona horaria local
 const isPatio = guardia.tipo === "recreo";
 let activada = false;
 let estaAsignada = false;
@@ -30,13 +32,13 @@ estaAsignada = asignaciones.length > 0;
 
 const fecha = new Date(todayLocal);
 const diasSemana = [
-  "Domingo", 
-  "Lunes", 
-  "Martes", 
-  "Miércoles", 
-  "Jueves", 
-  "Viernes", 
-  "Sábado"
+    "Domingo",
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
 ];
 const diaSemana = diasSemana[fecha.getDay()];
 
@@ -44,7 +46,7 @@ const diaSemana = diasSemana[fecha.getDay()];
 const { data: horariosProfesores, error: turnoError } = await supabase
     .from("horarios_profesor")
     .select("inicio, id_profesor")
-    .eq("dia_semana", diaSemana)
+    .eq("dia_semana", diaSemana);
 
 if (turnoError) throw turnoError;
 
@@ -86,9 +88,11 @@ if (nombresProfesoresDisponibles.includes(user.nombre)) {
 // [] Filtrar las guardias disponibles también por horario.
 ---
 
-<div
-    class={`miniguardia ${estaAsignada ? "asignada" : "sin-asignar"} ${activada ? "activada" : "sin-activar"}`}
-    onclick={`mostrarModal('modal-${guardia.id}')`}
+
+<div 
+  class={`miniguardia ${estaAsignada ? "asignada" : "sin-asignar"} ${activada ? "activada" : "sin-activar"}`}
+  data-guardia={JSON.stringify(guardia)}
+  data-profesores-disponibles={JSON.stringify(nombresProfesoresDisponibles)}
 >
     <div class="estado">
         <strong>{estaAsignada ? "ASIGNADA" : "SIN ASIGNAR"}</strong>
@@ -100,27 +104,6 @@ if (nombresProfesoresDisponibles.includes(user.nombre)) {
     </div>
 </div>
 
-<div id={`modal-${guardia.id}`} class="modal oculto">
-    <div class="modal-contenido">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h3>Profesores disponibles</h3>
-            <span class="cerrar" onclick={`cerrarModal('modal-${guardia.id}')`}
-                >&times;
-            </span>
-        </div>
-        <div class="profes-dispo">
-            {
-                profesoresDisponibles
-                    .filter((p) => p.nombre !== user.nombre)
-                    .map((p) => (
-                        <button>{p.nombre}</button>
-                    ))
-            }
-        </div>
-        {activada && <button onclick="asignarmeGuardia()">Asignarme</button>}
-    </div>
-</div>
-
 <style>
     .miniguardia {
         box-sizing: border-box;
@@ -128,6 +111,11 @@ if (nombresProfesoresDisponibles.includes(user.nombre)) {
         border-radius: 3px;
 
         width: 100%;
+    }
+
+    .miniguardia.sin-activar {
+        background-color: rgb(209, 209, 209) !important;
+        border-color: rgb(158, 158, 158) !important;
     }
 
     .guardiaContent {
@@ -174,14 +162,12 @@ if (nombresProfesoresDisponibles.includes(user.nombre)) {
         }
     }
 
-    
-
     .profes-dispo {
         display: flex;
         flex-direction: column;
         max-height: 300px; /* Adjust as needed */
         overflow-y: auto;
-        gap: 8px; 
+        gap: 8px;
     }
 
     .modal.oculto {
@@ -204,14 +190,30 @@ if (nombresProfesoresDisponibles.includes(user.nombre)) {
 </style>
 
 <script is:inline>
-    function mostrarModal(modalId) {
-        document.getElementById(modalId)?.classList.remove("oculto");
-    }
-    function cerrarModal(modalId) {
-        document.getElementById(modalId)?.classList.add("oculto");
-    }
-    function asignarmeGuardia() {
-        alert("Guardia asignada");
-        cerrarModal();
-    }
+    // Seleccionar todos los elementos con la clase miniguardia
+  document.querySelectorAll('.miniguardia').forEach(element => {
+    if (element.dataset.initialized) return;
+    
+    // Guardar datos en el dataset
+    const guardiaData = JSON.parse(element.dataset.guardia);
+    const nombresProfesoresDisponiblesData = JSON.parse(element.dataset.profesoresDisponibles);
+
+    element.addEventListener('click', async function(e) {
+      e.stopPropagation();
+      const infoEvent = new CustomEvent('open-info-modal', {
+        detail: {
+          guardia: guardiaData,
+          isMini: true,
+          isActivada: element.classList.contains('activada'),
+          isAsignada: element.classList.contains('asignada'),
+          profesDispo: nombresProfesoresDisponiblesData,
+        },
+        bubbles: true,
+      });
+      this.dispatchEvent(infoEvent);
+    });
+    
+    // Marcar como inicializado
+    element.dataset.initialized = "true";
+  });
 </script>

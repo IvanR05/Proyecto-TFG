@@ -38,13 +38,14 @@ if (!turnoActual) {
 }
 
 const todayDate = new Date();
-const todayLocal = new Date(todayDate.getTime() - todayDate.getTimezoneOffset() * 60000) // Ajusta a la zona horaria local
+const todayLocal = new Date(
+  todayDate.getTime() - todayDate.getTimezoneOffset() * 60000,
+) // Ajusta a la zona horaria local
   .toISOString()
   .split("T")[0]; // Extrae YYYY-MM-DD basado en la zona horaria local
 
 const inicioTurno = `${todayLocal}T${turnoActual[0].start}:00`;
 const finTurno = `${todayLocal}T${turnoActual[turnoActual.length - 1].end}:00`;
-
 
 // Cogemos todas las guardias entre el principio del día y el final del día.
 const { data: guardiasHoy, error: guardiasError } = await supabase
@@ -88,6 +89,21 @@ guardiasHoy.forEach((guardia) => {
     }
   });
 });
+
+const { data: aulasData, error: aulasError } = await supabase
+  .from("aulas")
+  .select("*");
+
+let usersData = [];
+if (user.tipo === "admin") {
+  const { data: users, error: usersError } = await supabase
+    .from("usuarios")
+    .select("id, nombre");
+  if (usersError) throw usersError;
+
+  // @ts-ignore
+  usersData = users;
+}
 ---
 
 <div class="guardias-table">
@@ -111,7 +127,7 @@ guardiasHoy.forEach((guardia) => {
               <div class="time-column">
                 {guardiasPorTramo[key].length > 0 ? (
                   guardiasPorTramo[key].map((guardia) => (
-                    <MiniGuardiaCard guardia={guardia} user={user}/>
+                    <MiniGuardiaCard guardia={guardia} user={user} />
                   ))
                 ) : (
                   <div class="empty-slot">
@@ -127,21 +143,235 @@ guardiasHoy.forEach((guardia) => {
       </tr>
     </tbody>
   </table>
-  
 
-  <script>
-    /* nothing here yet */
-  </script>
+  <div id="create-modal" class="modal">
+    <div class="modal-content">
+      <div class="normal-section">
+        <h3>Generar guardia para tramo de:</h3>
+        <form id="create-guardia-form">
+          <!-- Conditional Profesor Field -->
+          <input type="hidden" id="create-fecha" value={todayLocal} />
+          <input type="hidden" id="create-inicio" />
+          <input type="hidden" id="create-fin" />
+
+          <label id="form-tramo"></label>
+
+          <div class="form-separator">
+            <!-- Hidden input for non-admins -->
+            {user.tipo !== "admin" && <input type="hidden" id="create-profe-id" value={user.id} />}
+            {user.tipo == "admin" && <input type="hidden" id="create-user-id" value={user.id} />}
+
+            <label>Aula:</label>
+            <select id="create-aula" required>
+              <option value="">Selecciona un aula</option>
+              {
+                aulasData?.map((aula) => (
+                  <option value={aula.id_aula}>{aula.id_aula}</option>
+                ))
+              }
+            </select>
+
+            <label>Tipo:</label>
+            <select id="create-tipo" required>
+              <option value="Recreo">Recreo</option>
+              <option value="Clase">Clase</option>
+            </select>
+
+            <!-- Professor dropdown for admins (hidden by default) -->
+            {user.tipo === "admin" && (
+              <div id="profe-container" class="hidden">
+                <label>Profesor a sustituir:</label>
+                <select id="create-profe-id" required>
+                  <option value="">Selecciona un profesor</option>
+                  <option value={user.id}> - Tú - </option>
+                  {
+                    // @ts-ignore
+                    usersData.filter((u) => u.id !== user.id)
+                    .map((u) => (
+                      // @ts-ignore
+                      <option value={u.id}>{u.nombre}</option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            <label>Observaciones:</label>
+            <textarea id="create-observaciones"></textarea>
+          </div>
+
+          <div class="modal-buttons">
+            <button type="submit" class="confirm-button">Crear Guardia</button>
+            <button type="button" class="close-modal">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="generate-g" id="generateButton">
+  <span class="original-text">GENERAR GUARDIA</span>
+  <span class="selection-mode-text">Haz click en la franja horaria deseada</span
+  >
 </div>
 
+<script is:inline>
+  let selectionMode = false;
+  let selectionTimeout;
+  const generateButton = document.getElementById("generateButton");
+  const guardiasTable = document.querySelector(".guardias-table");
+
+  // Manejar clic en el botón
+  generateButton.addEventListener("click", () => {
+    if (!selectionMode) {
+      enterSelectionMode();
+    }
+  });
+
+  function enterSelectionMode() {
+    selectionMode = true;
+    generateButton.classList.add("selection-mode");
+    guardiasTable.classList.add("selection-mode");
+
+    // Configurar timeout para salir automáticamente
+    selectionTimeout = setTimeout(exitSelectionMode, 10000); // 10 segundos
+
+    // Agregar listener de "click" a los th
+    document.querySelectorAll("th").forEach((th) => {
+      th.addEventListener("click", handleSlotClick);
+    });
+  }
+
+  function exitSelectionMode() {
+    selectionMode = false;
+    clearTimeout(selectionTimeout);
+    generateButton.classList.remove("selection-mode");
+    guardiasTable.classList.remove("selection-mode");
+
+    // Remover listeners
+    document.querySelectorAll("th").forEach((th) => {
+      th.removeEventListener("click", handleSlotClick);
+    });
+  }
+
+  const handleSlotClick = (e) => {
+    if (!selectionMode) return;
+    showCreateModal(e.currentTarget);
+    exitSelectionMode();
+  };
+
+  function showCreateModal(th) {
+    const [start, end] = th.textContent.split("-");
+    const modal = document.getElementById("create-modal");
+
+    document.getElementById("form-tramo").innerHTML =
+      start.trim() + " - " + end.trim();
+    document.getElementById("create-inicio").value = start.trim();
+    document.getElementById("create-fin").value = end.trim();
+
+    modal.classList.add("show");
+  }
+
+  // Cerrar modal
+  document.querySelectorAll(".close-modal").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.getElementById("create-modal").classList.remove("show");
+      exitSelectionMode();
+    });
+  });
+
+  // Enviar formulario
+  document
+    .getElementById("create-guardia-form")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const id_profesor = document.getElementById("create-profe-id").value || document.getElementById("create-user-id").value;
+      const fecha = document.getElementById("create-fecha").value;
+      const inicio = document.getElementById("create-inicio").value;
+      const fin = document.getElementById("create-fin").value;
+
+      const nuevaGuardia = {
+        inicio: `${fecha}T${inicio}:00`,
+        fin: `${fecha}T${fin}:00`,
+        tipo: document.getElementById("create-tipo").value,
+        id_aula: document.getElementById("create-aula").value,
+        observaciones: document.getElementById("create-observaciones").value,
+        profesor_ausente: id_profesor, // Asegúrate de inyectar el ID del usuario*/
+      };
+      console.log(nuevaGuardia);
+
+      try {
+        const response = await fetch("/api/add-guardia", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(nuevaGuardia),
+        });
+
+        if (!response.ok) throw new Error("Error al crear guardia");
+
+        window.location.reload();
+      } catch (error) {
+        console.error("Error:", error);
+        alert(error.message);
+      }
+      exitSelectionMode();
+    });
+
+    // Add profesor dropdown visibility control
+    document.addEventListener('DOMContentLoaded', () => {
+      const tipoSelect = document.getElementById('create-tipo');
+      const profeContainer = document.getElementById('profe-container');
+      const profeSelect = document.getElementById('create-profe-id');
+
+      if (profeContainer && profeSelect) {
+        // Initial state
+        const updateProfeVisibility = () => {
+          const showProfe = tipoSelect.value === 'Clase';
+          profeContainer.classList.toggle('hidden', !showProfe);
+          profeSelect.required = showProfe;
+        };
+
+        // Update on change
+        tipoSelect.addEventListener('change', updateProfeVisibility);
+        
+        // Initial check
+        updateProfeVisibility();
+      }
+    });
+</script>
+
 <style>
+  .generate-g {
+    background-color: rgb(106, 27, 253);
+    height: 19px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 3px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+
+    width: 98.7%;
+    margin-bottom: 20px;
+    border: 1px;
+
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+
+    .selection-mode-text {
+      font-size: 12px;
+    }
+  }
+
   .guardias-table {
     overflow-x: auto;
     width: 100%;
     border: 1px solid #ddd;
     background-color: white;
     position: relative;
-    margin-bottom: 20px;
   }
 
   .guardias-table table {
@@ -150,44 +380,160 @@ guardiasHoy.forEach((guardia) => {
   }
 
   .guardias-table thead th {
-    position: sticky; /* Fija el encabezado en la parte superior */
+    position: sticky;
     top: 0;
-    background: #f5f5f5; /* Fondo para que no se trasluzca el contenido */
+    background: #f5f5f5;
     padding: 1rem;
     text-align: center;
     border-right: 1px solid #ddd;
-    z-index: 10; /* Asegura que esté sobre el contenido */
-    min-width: 140px; /* Ancho mínimo para las columnas */
+    z-index: 10;
+    min-width: 140px;
   }
 
+  /* Set fixed height for table cells */
   .guardias-table tbody td {
     border-right: 1px solid #ddd;
     vertical-align: top;
-    height: 300px; /* TODO cambiar esto */
-    overflow-y: auto; /* Scroll if content overflows */
+    height: 342px; /* Fixed height for all cells */
   }
 
+  /* Make time-column scrollable */
   .time-column {
     display: flex;
     flex-direction: column;
-    height: 100%; /* Fill td height */
+    height: 100%; /* Take full height of parent td */
+    overflow-y: scroll; /* Enable vertical scrolling */
     gap: 0.5rem;
   }
 
   .empty-slot {
-    flex-grow: 1; /* Expand to fill available space */
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: rgba(252, 196, 92, 0.877);
   }
 
-  #current-time-line {
+  .add-guardia {
+    bottom: 0;
+    background-color: yellow;
+  }
+
+  /* Selector stuff */
+  .generate-g span {
+    display: block;
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
     position: absolute;
-    top: 0; /* Start at the top of .guardias-table */
-    width: 2px; /* Thin vertical line */
-    height: 100%; /* Span the full height of the table */
-    background: red;
-    z-index: 100; /* Ensure it’s above other content */
+    width: 100%;
+    left: 0;
+  }
+
+  .generate-g .original-text {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .generate-g .selection-mode-text {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .generate-g.selection-mode {
+    background-color: #4caf50; /* Verde para modo selección */
+  }
+
+  .generate-g.selection-mode .original-text {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  .generate-g.selection-mode .selection-mode-text {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .guardias-table.selection-mode th {
+    background-color: #abfff8 !important; /* Fondo verde claro */
+    border: 1px solid;
+
+    /*border: 2px dashed !important;*/
+    cursor: pointer;
+  }
+
+  /* Modal stuff */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  .modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 75%;
+    max-width: 500px;
+  }
+
+  #create-guardia-form {
+    font-size: 16px !important;
+    display: flex;
+    flex-direction: column;
+
+    .form-separator {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    
+
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  #form-tramo {
+    justify-self: center;
+    align-self: center;
+    width: 170px;
+    text-align: center;
+    font-size: 25px;
+
+    padding: 6px;
+    border-radius: 8px;
+    background-color: cyan;
+
+    margin-bottom: 15px;
+  }
+
+  #profe-container:not(.hidden) {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+  .hidden {
+    display: none;
+  }
+
+  .modal-buttons {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
   }
 </style>

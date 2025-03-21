@@ -2,16 +2,27 @@
 import AppLayout from "../layouts/AppLayout.astro";
 import { supabase } from "../lib/supabase.js";
 
+// Realiza una consulta a la tabla "usuarios" en Supabase
 const { data: usuarios, error } = await supabase
-  .from('usuarios')
-  .select(`
+  .from("usuarios")
+  .select(
+    `
     id,
     nombre,
     correo,
     created_at
-  `)
-  .eq('aceptado', false)
-  .order('created_at', { ascending: true });
+  `
+  )
+  .eq("aceptado", false)
+  .order("created_at", { ascending: true });
+
+  // Extiende la interfaz global "Window" para agregar la propiedad "user"
+  declare global {
+  interface Window {
+    user?: { id: number; nombre: string; correo: number; tipo: string; auth_id: string }; // Ajusta según la estructura de tu usuario
+  }
+}
+
 ---
 
 <AppLayout title="Gestión de Usuarios">
@@ -53,153 +64,228 @@ const { data: usuarios, error } = await supabase
             </div>
         )}
     </main>
+</AppLayout>
 
-    <script is:inline>
-        (function() {
-            document.addEventListener('click', async (e) => {
-                const btn = e.target.closest('.btn');
-                if (!btn) return;
-                
-                const row = btn.closest('tr');
-                const id = row.dataset.id;
-                const action = btn.dataset.action;
-                const isAccept = action === 'accept';
-                
-                try {
-                    btn.disabled = true;
-                    row.style.opacity = '0.5';
-                    
-                    const response = await fetch('/api/update-user', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id, aceptado: isAccept })
-                    });
-    
-                    if (!response.ok) {
-                        throw new Error(await response.text());
-                    }
-    
-                    row.style.transition = 'opacity 0.3s';
-                    row.style.opacity = '0';
-                    setTimeout(() => row.remove(), 300);
-                    
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert(`❌ Error: ${error.message}`);
-                } finally {
-                    btn.disabled = false;
-                    row.style.opacity = '1';
-                }
-            });
-        })();
-    </script>
 
-    <style>
-        :root {
-            --primary-color: #34495e;
-            --secondary-color: #2ecc71;
-            --danger-color: #e74c3c;
-            --bg-color: #f4f6f7;
-            --text-color: #2c3e50;
-            --shadow-color: rgba(0, 0, 0, 0.2);
+    {
+      error ? (
+        <div class="error">⚠️ Error cargando usuarios: {error.message}</div>
+      ) : (
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuarios.length === 0 ? (
+                <tr class="empty">
+                  <td colspan="3">🎉 Todos los usuarios están aprobados</td>
+                </tr>
+              ) : (
+                usuarios.map((usuario) => (
+                  <tr data-id={usuario.id}>
+                    <td>{usuario.nombre}</td>
+                    <td>{usuario.correo}</td>
+                    <td class="actions">
+                      <button class="btn accept" data-action="accept">
+                        ✅ Aceptar
+                      </button>
+                      <button class="btn reject" data-action="reject">
+                        ❌ Rechazar
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </main>
+  <script>
+    // Función autoejecutable (IIFE) para obtener y manejar los datos del usuario
+(async function () {
+  try {
+    // Realiza una solicitud para obtener los datos del usuario desde la ruta "/api/auth/get-user"
+    const userData = await fetch("/api/auth/get-user");
+
+    // Si la respuesta no es correcta (código de estado no es 2xx), lanza un error
+    if (!userData.ok) {
+      throw new Error("Error al obtener los datos del usuario.");
+    }
+
+    // Si la respuesta es exitosa, convierte los datos en JSON y asigna los datos al objeto global "window.user"
+    window.user = await userData.json() || {}; // Si no se recibe datos, asigna un objeto vacío
+
+    // Muestra el nombre del usuario en la consola si los datos fueron obtenidos correctamente
+    console.log("usuario", window.user?.nombre);
+
+  } catch (error) {
+    // Si ocurre un error durante la ejecución, lo muestra en la consola
+    console.error(error);
+  }
+})();
+
+  </script>
+ <script is:inline>
+
+    // Función autoejecutable (IIFE) para manejar el clic en botones y realizar una actualización
+    (function () {
+      // Agrega un evento "click" a todo el documento
+      document.addEventListener("click", async (e) => {
+        // Obtiene el botón que fue clickeado, si no es un botón válido, termina la función
+        const btn = e.target.closest(".btn");
+        if (!btn) return;
+  
+        // Obtiene la fila (tr) que contiene el botón
+        const row = btn.closest("tr");
+        // Obtiene el ID de la fila, que está almacenado en un atributo de datos personalizado
+        const id = row.dataset.id;
+        // Obtiene la acción (aceptar o rechazar) que está asociada al botón
+        const action = btn.dataset.action;
+        // Determina si la acción es "aceptar"
+        const isAccept = action === "accept";
+        // Obtiene el nombre del usuario admin desde el objeto global "window.user"
+        const nombre = user.nombre;
+  
+        try {
+          // Desactiva el botón para evitar múltiples clics y cambia la opacidad de la fila para dar un efecto visual
+          btn.disabled = true;
+          row.style.opacity = "0.5";
+  
+          // Realiza una solicitud PUT a la API para actualizar los datos del usuario
+          const response = await fetch("/api/update-user", {
+            method: "PUT", // Método PUT para actualizar
+            headers: { "Content-Type": "application/json" }, // Configura el tipo de contenido como JSON
+            body: JSON.stringify({ id, aceptado: isAccept, nombreAdmin: window.user.nombre }), // Envia los datos al servidor
+          });
+  
+          // Si la respuesta no es exitosa, lanza un error con el mensaje recibido
+          if (!response.ok) {
+            throw new Error(await response.text());
+          }
+  
+          // Si todo sale bien, realiza una transición para ocultar la fila y eliminarla después de un breve retraso
+          row.style.transition = "opacity 0.3s"; // Define la transición de opacidad
+          row.style.opacity = "0"; // Hace que la fila se desvanezca
+          setTimeout(() => row.remove(), 300); // Elimina la fila después de que la opacidad se haya desvanecido
+  
+        } catch (error) {
+          // Si ocurre un error, muestra un mensaje de error en la consola y una alerta
+          console.error("Error:", error);
+          alert(`❌ Error: ${error.message}`);
+        } finally {
+          // Independientemente de si la operación fue exitosa o no, reactiva el botón y restaura la opacidad de la fila
+          btn.disabled = false;
+          row.style.opacity = "1";
         }
+      });
+    })();
+  
+  </script>
+  
 
-        .container {
-            min-height: 100%;
-            max-width: 900px;
-            
-            padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px var(--shadow-color);
-            text-align: center;
-            transition: transform 0.3s ease-in-out;
-        }
+  <style>
+    :root {
+      --primary-color: #34495e;
+      --secondary-color: #2ecc71;
+      --danger-color: #e74c3c;
+      --bg-color: #f4f6f7;
+      --text-color: #2c3e50;
+      --shadow-color: rgba(0, 0, 0, 0.2);
+    }
 
-        h1 {
-            color: var(--primary-color);
-            margin-top: 0px;
-            margin-bottom: 1.5rem;
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
+    .container {
+      min-height: 100%;
+      max-width: 900px;
 
-        h3{
-            color: var(--primary-color);
-            margin-bottom: 1.5rem;
-            font-size: 1rem;
-            font-weight: bold;
-        }
+      padding: 2rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px var(--shadow-color);
+      text-align: center;
+      transition: transform 0.3s ease-in-out;
+    }
 
-        .table-container {
-            overflow-x: auto;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px var(--shadow-color);
-        }
+    h1 {
+      color: var(--primary-color);
+      margin-top: 0px;
+      margin-bottom: 1.5rem;
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-        }
+    h3 {
+      color: var(--primary-color);
+      margin-bottom: 1.5rem;
+      font-size: 1rem;
+      font-weight: bold;
+    }
 
-        th, td {
-            padding: 1.2rem;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-            color: black;
-        }
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px var(--shadow-color);
+    }
 
-        th {
-            background: var(--primary-color);
-            color: white;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
 
-        .actions {
-            display: flex;
-            gap: 0.8rem;
-        }
+    th,
+    td {
+      padding: 1.2rem;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      color: black;
+    }
 
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            box-shadow: 0 2px 5px var(--shadow-color);
-        }
+    th {
+      background: var(--primary-color);
+      color: white;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
 
-        .accept {
-            background: var(--secondary-color);
-            color: white;
-        }
+    .actions {
+      display: flex;
+      gap: 0.8rem;
+    }
 
-        .reject {
-            background: var(--danger-color);
-            color: white;
-        }
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+      box-shadow: 0 2px 5px var(--shadow-color);
+    }
 
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
+    .accept {
+      background: var(--secondary-color);
+      color: white;
+    }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+    .reject {
+      background: var(--danger-color);
+      color: white;
+    }
 
-        .empty td {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-            font-size: 1.2rem;
-        }
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
 
         .error {
             background: #fee2e2;
@@ -210,5 +296,40 @@ const { data: usuarios, error } = await supabase
             font-size: 1.1rem;
             font-weight: bold;
         }
-    </style>
-</AppLayout>
+
+        .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .empty td {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .empty td {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+      font-size: 1.2rem;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #c0392b;
+      padding: 1.2rem;
+      border-radius: 6px;
+      margin: 2rem 0;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+  </style>
+
+
