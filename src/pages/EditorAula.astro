@@ -35,14 +35,17 @@ const editando = queryParams.get('editando');
 
 <script is:inline>
     async function handleSubmit() {
+        //Se recuperan los valores de los dos inputs
         const idInput = document.getElementById('idInput').value.trim();
         const grupoInput = document.getElementById('grupoInput').value.trim();
 
+        //Si estan vacios se pide al usuario que los rellene
         if (!idInput || !grupoInput) {
             alert("Por favor, completa todos los campos.");
             return;
         }
 
+        //Se recupera el parametro 'editando' de la URL
         const urlParams = new URLSearchParams(window.location.search);
         const editando = urlParams.get('editando');
         
@@ -50,6 +53,7 @@ const editando = queryParams.get('editando');
         let url = '';
         let method = '';
 
+        //Si se esta editando se llama al archivo de api update-aula y se le pasan los datos nuevos y la id original
         if (editando === 'true') {
             url = '/api/update-aula';
             method = 'PUT';
@@ -59,7 +63,7 @@ const editando = queryParams.get('editando');
                 id_nuevo: idInput,
                 curso_nuevo: grupoInput
             };
-        } else {
+        } else { //Si no esta en modo editar se llama a add-aula con los datos nuevos
             url = '/api/add-aula';
             method = 'POST';
             aulaData = {
@@ -68,6 +72,7 @@ const editando = queryParams.get('editando');
             };
         }
 
+        //Se gestionan errores y se vuelve a la pagina de GestionAulas.astro
         try {
             const response = await fetch(url, {
                 method,
