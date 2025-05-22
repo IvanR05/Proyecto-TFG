@@ -16,4 +16,4 @@ Para acceder a la documentación usa los siguientes enlaces:
 - [Video demo](https://drive.google.com/file/d/19mmJxminTuEAC9RIY7APMGNIfjP6P1sO/view?usp=drive_link)
 
 ## 👥 Integrantes del grupo
-_Jorge Alonso, Ivan Ruíz, Izan Morán_
+_Jorge Alonso, Iván Ruiz, Izan Morán_
